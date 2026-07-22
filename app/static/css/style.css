@@ -1,0 +1,366 @@
+/* ─── RESET & VARIABLES ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Estas variables ahora se redefinen en .gw-container según el clima */
+  --divider:        rgba(255,255,255,0.15);
+  --card-bg:        rgba(255,255,255,0.1);
+  --container-bg:   rgba(28,30,34,0.82);
+}
+
+/* ─── FONDOS DINÁMICOS DEL CIELO ─── */
+body {
+  font-family: 'Roboto', 'Arial', sans-serif;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0 60px;
+  background-color: #f5f5f5; /* Light background for the page outside the card */
+  overflow-x: hidden;
+}
+
+/* ─── CANVAS DE EFECTOS (lluvia, estrellas) ─── */
+.weather-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─── ESCENA FINCA (franja inferior del fondo) ─── */
+.scene-backdrop {
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 100%;
+  height: 250px;
+  z-index: 0;
+  pointer-events: none;
+}
+.scene-backdrop-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.9;
+  transition: opacity 0.5s ease;
+}
+.scene-backdrop-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, var(--container-bg) 0%, transparent 40%, rgba(0,0,0,0.1) 100%);
+}
+
+/* Colores por defecto (noche/oscuro) */
+.gw-container {
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255,255,255,0.7);
+  --text-blue:      #8ab4f8;
+  --tab-accent:     #fbbc04;
+  --temp-color:     #ffffff; /* Temp color default */
+
+  background: var(--container-bg);
+  width: 100%;
+  max-width: 660px;
+  padding: 20px 24px 250px 24px;
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+  z-index: 10;
+  align-self: flex-start;
+  overflow: hidden;
+  transition: background-color 1s ease, color 1s ease;
+  color: var(--text-primary);
+}
+/* Asegurar que el texto esté por encima, sin romper absolute */
+.gw-container > *:not(.weather-canvas):not(.scene-backdrop) {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3); /* Sombra para que se lea mejor siempre */
+}
+
+/* Colores de la tarjeta según el clima */
+.gw-container.sky-sunny  { 
+  --container-bg: #4ea8de; 
+  --text-primary: #ffffff;
+  --text-secondary: #0b3954; /* Azul oscuro fuerte para textos secundarios */
+  --tab-accent: #fbc02d; /* Amarillo oro oscuro */
+  --temp-color: #fdd835; /* Amarillo vibrante para los grados */
+}
+.gw-container.sky-cloudy { 
+  --container-bg: #6c7a89;
+  --text-primary: #ffffff;
+  --text-secondary: #2c3e50; /* Gris oscuro para nubes */
+  --tab-accent: #f5b041;
+  --temp-color: #f2f3f4; /* Blanco grisáceo */
+}
+.gw-container.sky-rainy  { 
+  --container-bg: #34495e; 
+  --text-primary: #ffffff;
+  --text-secondary: #aed6f1; /* Azul celeste claro para que resalte en gris oscuro */
+  --tab-accent: #f39c12; 
+  --temp-color: #85c1e9; /* Azul para los grados lloviendo */
+}
+.gw-container.sky-night  { 
+  --container-bg: #1a2530;
+  --text-primary: #ffffff;
+  --text-secondary: #d5d8dc; /* Gris claro para noche */
+  --tab-accent: #f1c40f;
+  --temp-color: #ffffff; /* Blanco para noche */
+}
+
+@media (max-width: 700px) {
+  .gw-container { border-radius: 12px; }
+  body { padding: 12px 8px; }
+}
+
+/* ─── CABECERA ─── */
+.gw-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.gw-location {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.gw-location-dot { color: var(--text-blue); font-size: 10px; }
+.gw-location-text { font-weight: 500; }
+.gw-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gw-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background-color: #fbbc04;
+}
+.gw-status-dot.online  { background-color: #81c995; }
+.gw-status-dot.offline { background-color: #f28b82; }
+.gw-last-update { font-size: 12px; color: var(--text-secondary); }
+
+/* ─── TOGGLES DE PREFERENCIAS ─── */
+.gw-prefs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.gw-toggle-group {
+  display: flex;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 20px;
+  overflow: hidden;
+}
+.gw-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: inherit;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gw-toggle-btn.active {
+  background: rgba(251,188,4,0.2);
+  color: var(--tab-accent);
+  font-weight: 500;
+}
+
+/* ─── CLIMA ACTUAL ─── */
+.gw-main-weather {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.gw-main-left { display: flex; align-items: center; gap: 12px; }
+.gw-huge-icon { width: 76px; height: 76px; object-fit: contain; }
+.gw-temp-box { display: flex; align-items: flex-start; }
+.gw-temp-value {
+  font-size: 64px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -2px;
+  color: var(--temp-color);
+  transition: color 1s ease;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Resalta más */
+}
+.gw-temp-units {
+  display: flex;
+  margin-top: 10px;
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+.gw-unit {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.gw-unit:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+.gw-unit.active { color: var(--text-primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.gw-unit-div { margin: 0 2px; color: var(--text-secondary); }
+
+/* Reloj clickeable */
+.gw-clock-widget {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+  width: fit-content;
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: background 0.2s;
+}
+.gw-clock-widget:hover { background: rgba(255,255,255,0.08); }
+#gwClockTime { font-size: 14px; font-weight: 500; }
+.gw-clock-fmt {
+  font-size: 10px;
+  color: var(--tab-accent);
+  border: 1px solid var(--tab-accent);
+  border-radius: 10px;
+  padding: 1px 5px;
+  font-weight: 500;
+}
+.gw-main-right { text-align: right; }
+.gw-weather-title { font-size: 20px; font-weight: 400; margin-bottom: 4px; }
+.gw-weather-desc { font-size: 15px; color: var(--text-secondary); }
+
+/* ─── DETALLES RÁPIDOS ─── */
+.gw-details {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+
+/* ─── PESTAÑAS ─── */
+.gw-tabs {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 20px;
+}
+.gw-tab {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+  padding: 8px 0 12px;
+  cursor: pointer;
+  position: relative;
+}
+.gw-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 100%; height: 3px;
+  background-color: var(--tab-accent);
+  border-radius: 3px 3px 0 0;
+}
+
+/* ─── GRÁFICO PRINCIPAL ─── */
+.gw-chart-container { width: 100%; height: 130px; margin-bottom: 28px; }
+
+/* ─── PRONÓSTICO 7 DÍAS ─── */
+.gw-forecast-row {
+  display: flex;
+  justify-content: space-between;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+  gap: 4px;
+}
+.gw-forecast-row::-webkit-scrollbar { display: none; }
+.gw-day-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 62px;
+  gap: 6px;
+  font-size: 13px;
+  padding: 8px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.gw-day-col:hover { background: rgba(255,255,255,0.07); }
+.gw-day-col.today { background: rgba(255,255,255,0.1); }
+.gw-day-name { font-weight: 500; font-size: 12px; color: var(--text-secondary); }
+.gw-day-col.today .gw-day-name { color: var(--text-primary); }
+.gw-day-icon { width: 28px; height: 28px; }
+.gw-day-temps { display: flex; gap: 4px; font-size: 13px; }
+.gw-temp-high { font-weight: 500; }
+.gw-temp-low { color: var(--text-secondary); }
+
+/* ─── DIVISOR ─── */
+.gw-divider { height: 1px; background-color: var(--divider); margin: 20px 0; }
+
+/* ─── MÉTRICAS EXTRA ─── */
+.gw-extra-metrics {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.gw-extra-card {
+  flex: 1; min-width: 80px;
+  text-align: center;
+  background: var(--card-bg);
+  padding: 10px 6px;
+  border-radius: 8px;
+}
+.gw-extra-title { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+.gw-extra-val { font-size: 14px; font-weight: 500; }
+
+/* ─── PANEL HISTÓRICO ─── */
+.gw-history-panel { margin-bottom: 10px; }
+.gw-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.gw-history-title { font-size: 15px; font-weight: 500; }
+.gw-history-filters { display: flex; gap: 6px; }
+.gw-filter-btn {
+  background: transparent;
+  border: 1px solid var(--divider);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.gw-filter-btn.active {
+  background: rgba(251,188,4,0.15);
+  border-color: var(--tab-accent);
+  color: var(--tab-accent);
+}
+.gw-history-chart-container { width: 100%; height: 160px; }
+
+/* ─── FOOTER ─── */
+.gw-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-secondary);
+}

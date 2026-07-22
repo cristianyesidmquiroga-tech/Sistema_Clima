@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sistema Clima | Finca Lagunitas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css?v=6">
+</head>
+<body class="theme-dark">
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="gw-container">
+
+    <!-- CANVAS PARA EFECTOS ANIMADOS (dentro de la tarjeta) -->
+    <canvas id="weatherCanvas" class="weather-canvas"></canvas>
+
+    <!-- ESCENA DE FINCA EN LA PARTE BAJA DE LA TARJETA -->
+    <div class="scene-backdrop">
+      <img src="/static/bg_sunny.png" alt="Finca" class="scene-backdrop-img" id="sceneImg">
+      <div class="scene-backdrop-fade"></div>
+    </div>
+
+    <header class="gw-header">
+      <div class="gw-location">
+        <span class="gw-location-dot">●</span>
+        <span class="gw-location-text">Finca Lagunitas, Guavatá, Santander</span>
+      </div>
+      <div class="gw-header-right">
+        <!-- Preferencias de temperatura -->
+        <div class="gw-prefs">
+          <div class="gw-toggle-group" id="tempToggle">
+            <button class="gw-toggle-btn active" data-unit="C">°C</button>
+            <button class="gw-toggle-btn" data-unit="F">°F</button>
+          </div>
+          <!-- Preferencias de formato de hora -->
+          <div class="gw-toggle-group" id="timeToggle">
+            <button class="gw-toggle-btn active" data-fmt="24">24h</button>
+            <button class="gw-toggle-btn" data-fmt="12">12h</button>
+          </div>
+        </div>
+        <span id="gwStatusDot" class="gw-status-dot"></span>
+        <span id="gwLastUpdate" class="gw-last-update">--:--</span>
+      </div>
+    </header>
+
+    <section class="gw-main-weather">
+      <div class="gw-main-left">
+        <img src="/static/icon-sun.svg" id="gwMainIcon" alt="Clima" class="gw-huge-icon">
+        <div class="gw-temp-box">
+          <span class="gw-temp-value" id="gwTemp">--</span>
+          <!-- Unidades clickeables directamente -->
+          <div class="gw-temp-units">
+            <span class="gw-unit active" id="unitC" title="Cambiar a Celsius">°C</span>
+            <span class="gw-unit-div">|</span>
+            <span class="gw-unit" id="unitF" title="Cambiar a Fahrenheit">°F</span>
+          </div>
+        </div>
+      </div>
+      <div class="gw-main-right">
+        <div class="gw-weather-title">Clima</div>
+        <div class="gw-weather-desc" id="gwDesc">Calculando...</div>
+        <!-- Reloj clickeable para cambiar formato -->
+        <div class="gw-clock-widget" id="gwClock" title="Clic para cambiar formato de hora">
+          <span id="gwClockTime">--:--</span>
+          <span class="gw-clock-fmt" id="gwClockFmt">24h</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="gw-details">
+      <p>Lluvia (Hoy): <span id="gwLluviaHoy">--</span> mm</p>
+      <p>Humedad: <span id="gwHumedad">--</span>%</p>
+      <p>Viento: a <span id="gwViento">--</span> km/h</p>
+    </section>
+
+    <nav class="gw-tabs">
+      <button class="gw-tab active" data-target="temp">Temperatura</button>
+      <button class="gw-tab" data-target="rain">Precipitaciones</button>
+      <button class="gw-tab" data-target="wind">Viento</button>
+    </nav>
+
+    <section class="gw-chart-container">
+      <canvas id="gwChart"></canvas>
+    </section>
+
+    <section class="gw-forecast-row" id="gwForecastRow"></section>
+
+    <div class="gw-divider"></div>
+
+    <section class="gw-extra-metrics">
+      <div class="gw-extra-card">
+        <div class="gw-extra-title">Índice UV</div>
+        <div class="gw-extra-val" id="gwUV">--</div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-title">Presión Rel.</div>
+        <div class="gw-extra-val" id="gwPresion">-- hPa</div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-title">Sensación</div>
+        <div class="gw-extra-val" id="gwSensacion">-- °C</div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-title">Temp Interior</div>
+        <div class="gw-extra-val" id="gwTempInt">-- °C</div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-title">Punto Rocío</div>
+        <div class="gw-extra-val" id="gwRocio">-- °C</div>
+      </div>
+    </section>
+
+    <div class="gw-divider"></div>
+
+    <section class="gw-history-panel">
+      <div class="gw-history-header">
+        <h3 class="gw-history-title">📊 Análisis Histórico</h3>
+        <div class="gw-history-filters">
+          <button class="gw-filter-btn active" data-tipo="dias">Días</button>
+          <button class="gw-filter-btn" data-tipo="meses">Meses</button>
+          <button class="gw-filter-btn" data-tipo="años">Años</button>
+        </div>
+      </div>
+      <div class="gw-history-chart-container">
+        <canvas id="gwHistoryChart"></canvas>
+      </div>
+    </section>
+
+    <footer class="gw-footer">
+      <span id="gwStatusText">Estación: Conectando...</span>
+    </footer>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/static/js/weather-fx.js?v=6"></script>
+  <script src="/static/js/dashboard.js?v=7"></script>
+</body>
+</html>
