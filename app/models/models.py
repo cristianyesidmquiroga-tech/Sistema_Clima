@@ -135,12 +135,27 @@ def aplicar_compensacion_termica(temp_c, radiacion, viento_kmh):
         return temp_c
 
 
+def get_field(datos, *nombres):
+    for nombre in nombres:
+        valor = datos.get(nombre)
+        if valor is not None:
+            return valor
+    return None
+
+def absoluta_a_relativa(hpa, altitud_m=1800):
+    if hpa is None:
+        return None
+    try:
+        return round(hpa / ((1 - (0.0065 * altitud_m / 288.15)) ** 5.255), 1)
+    except Exception:
+        return None
+
 def guardar_lectura(datos_raw):
     try:
         temp_ext_raw = fahrenheit_a_celsius(datos_raw.get('tempf'))
         radiacion_solar = datos_raw.get('solarradiation')
         viento_vel = mph_a_kmh(datos_raw.get('windspeedmph'))
-        sensacion_raw = fahrenheit_a_celsius(datos_raw.get('feelslikef'))
+        sensacion_raw = fahrenheit_a_celsius(get_field(datos_raw, 'feelslikef', 'feelslike'))
         
         temp_ext_calibrada = aplicar_compensacion_termica(temp_ext_raw, radiacion_solar, viento_vel)
         
@@ -149,20 +164,20 @@ def guardar_lectura(datos_raw):
         
         nueva_lectura = Lectura(
             temp_exterior=temp_ext_calibrada,
-            temp_interior=fahrenheit_a_celsius(datos_raw.get('tempinf')),
+            temp_interior=fahrenheit_a_celsius(get_field(datos_raw, 'tempinf', 'indoortempf')),
             humedad_exterior=datos_raw.get('humidity'),
-            humedad_interior=datos_raw.get('humidityin'),
+            humedad_interior=get_field(datos_raw, 'humidityin', 'indoorhumidity'),
             velocidad_viento=viento_vel,
             rafaga_viento=mph_a_kmh(datos_raw.get('windgustmph')),
             direccion_viento=datos_raw.get('winddir'),
             lluvia_hora=pulgadas_a_mm(datos_raw.get('rainratein')),
             lluvia_dia=pulgadas_a_mm(datos_raw.get('dailyrainin')),
             lluvia_evento=pulgadas_a_mm(datos_raw.get('eventrainin')),
-            presion_relativa=inhg_a_hpa(datos_raw.get('baromrelin')),
             presion_absoluta=inhg_a_hpa(datos_raw.get('baromabsin')),
+            presion_relativa=inhg_a_hpa(datos_raw.get('baromrelin')) or absoluta_a_relativa(inhg_a_hpa(datos_raw.get('baromabsin'))),
             uv_index=datos_raw.get('uv'),
             radiacion_solar=radiacion_solar,
-            punto_rocio=fahrenheit_a_celsius(datos_raw.get('dewptf')),
+            punto_rocio=fahrenheit_a_celsius(get_field(datos_raw, 'dewptf', 'dewpoint')),
             sensacion_termica=sensacion_calibrada,
             passkey=datos_raw.get('PASSKEY', 'desconocido')
         )

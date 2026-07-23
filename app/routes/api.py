@@ -4,7 +4,6 @@ from app.models.models import (
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico
 )
-import json
 from datetime import datetime
 
 bp = Blueprint('api', __name__)

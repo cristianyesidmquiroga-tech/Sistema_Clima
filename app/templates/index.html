@@ -6,7 +6,7 @@
   <title>Sistema Clima | Finca Lagunitas</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=6">
+  <link rel="stylesheet" href="/static/css/style.css?v=27">
 </head>
 <body class="theme-dark">
 
@@ -34,14 +34,8 @@
             <button class="gw-toggle-btn active" data-unit="C">°C</button>
             <button class="gw-toggle-btn" data-unit="F">°F</button>
           </div>
-          <!-- Preferencias de formato de hora -->
-          <div class="gw-toggle-group" id="timeToggle">
-            <button class="gw-toggle-btn active" data-fmt="24">24h</button>
-            <button class="gw-toggle-btn" data-fmt="12">12h</button>
-          </div>
         </div>
         <span id="gwStatusDot" class="gw-status-dot"></span>
-        <span id="gwLastUpdate" class="gw-last-update">--:--</span>
       </div>
     </header>
 
@@ -77,12 +71,13 @@
 
     <nav class="gw-tabs">
       <button class="gw-tab active" data-target="temp">Temperatura</button>
-      <button class="gw-tab" data-target="rain">Precipitaciones</button>
+      <button class="gw-tab" data-target="rain">Humedad</button>
       <button class="gw-tab" data-target="wind">Viento</button>
     </nav>
 
     <section class="gw-chart-container">
-      <canvas id="gwChart"></canvas>
+      <canvas id="gwChart" style="display: none;"></canvas>
+      <div id="gwWindContainer" class="gw-wind-container"></div>
     </section>
 
     <section class="gw-forecast-row" id="gwForecastRow"></section>
@@ -91,24 +86,114 @@
 
     <section class="gw-extra-metrics">
       <div class="gw-extra-card">
-        <div class="gw-extra-title">Índice UV</div>
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Rayos UV</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
         <div class="gw-extra-val" id="gwUV">--</div>
+        <div class="gw-info-popover">
+          <strong>Rayos ultravioleta del sol.</strong> Entre más alto, más dañino para la piel.
+          <div class="gw-info-scale">0-2 Bajo ✅ | 3-5 Moderado ⚠️ | 6+ Alto 🔴</div>
+        </div>
       </div>
       <div class="gw-extra-card">
-        <div class="gw-extra-title">Presión Rel.</div>
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Presión Atmosférica</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
         <div class="gw-extra-val" id="gwPresion">-- hPa</div>
+        <div class="gw-info-popover">
+          <strong>El peso del aire sobre nosotros.</strong> Normal: ~1013 hPa.
+          <div class="gw-info-scale">Sube → buen tiempo ☀️ | Baja → lluvia o tormenta 🌧️</div>
+        </div>
       </div>
       <div class="gw-extra-card">
-        <div class="gw-extra-title">Sensación</div>
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Sensación Térmica</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
         <div class="gw-extra-val" id="gwSensacion">-- °C</div>
+        <div class="gw-info-popover">
+          <strong>Cómo se siente el clima en el cuerpo.</strong> El sol, el viento y la humedad hacen que se sienta más calor o más frío de lo que marca el termómetro.
+          <div class="gw-info-scale">En Colombia puede sentirse hasta 5°C más de lo real 🥵</div>
+        </div>
       </div>
       <div class="gw-extra-card">
-        <div class="gw-extra-title">Temp Interior</div>
-        <div class="gw-extra-val" id="gwTempInt">-- °C</div>
-      </div>
-      <div class="gw-extra-card">
-        <div class="gw-extra-title">Punto Rocío</div>
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Punto de Rocío</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
         <div class="gw-extra-val" id="gwRocio">-- °C</div>
+        <div class="gw-info-popover">
+          <strong>Temperatura donde el aire forma goticas de agua (rocío).</strong> Mide qué tan húmedo se siente el ambiente.
+          <div class="gw-info-scale">&lt;10°C: seco y fresco ✅ | 15-20°C: húmedo 🌫️ | &gt;20°C: muy pesado 🥵</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Fase Lunar</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwLuna">--</div>
+        <div class="gw-info-popover">
+          <strong>La parte de la luna que se ve desde la tierra.</strong> Cambia en un ciclo de 29 días.
+          <div class="gw-info-scale">Nueva 🌑 → Creciente 🌒 → Cuarto Creciente 🌓 → Llena 🌕 → Cuarto Menguante 🌗 → Menguante 🌘 (ciclo de 29 días)</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Radiación Solar</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwSolar">-- W/m²</div>
+        <div class="gw-info-popover">
+          <strong>La energía del sol que llega al suelo.</strong>
+          <div class="gw-info-scale">0 W/m²: noche 🌙 | 500-800: normal ☀️ | 1000+: medio día 🔥</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Dirección del Viento</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwDirViento">--</div>
+        <div class="gw-info-popover">
+          <strong>De dónde viene el viento.</strong>
+          <div class="gw-info-scale">Viento del Sur = viene del Sur. N=Norte, S=Sur, E=Este, O=Oeste</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Ráfagas de Viento</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwRafaga">-- km/h</div>
+        <div class="gw-info-popover">
+          <strong>La ráfaga más fuerte de viento en los últimos minutos.</strong>
+          <div class="gw-info-scale">0-15: brisa suave 🍃 | 15-30: viento normal 🌿 | 30-50: ventarrón 🌬️ | 50+: fuerte 💨</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Temperatura Interior</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwTempInt">-- °C</div>
+        <div class="gw-info-popover">
+          <strong>Temperatura dentro de la casa.</strong>
+          <div class="gw-info-scale">22-26°C: ideal ✅ | &lt;18°C: fresco ❄️ | &gt;30°C: caluroso 🔥</div>
+        </div>
+      </div>
+      <div class="gw-extra-card">
+        <div class="gw-extra-header">
+          <div class="gw-extra-title">Humedad Interior</div>
+          <button class="gw-info-btn" aria-label="Info">?</button>
+        </div>
+        <div class="gw-extra-val" id="gwHumInt">-- %</div>
+        <div class="gw-info-popover">
+          <strong>Vapor de agua en el aire dentro de la casa.</strong>
+          <div class="gw-info-scale">40-60%: ideal ✅ | &gt;70%: moho 🦠 | &lt;30%: muy seco, alergias 🤧</div>
+        </div>
       </div>
     </section>
 
@@ -126,6 +211,7 @@
       <div class="gw-history-chart-container">
         <canvas id="gwHistoryChart"></canvas>
       </div>
+      <div id="gwHistoryAnalysis" class="gw-history-analysis"></div>
     </section>
 
     <footer class="gw-footer">
@@ -134,8 +220,9 @@
 
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="/static/js/weather-fx.js?v=6"></script>
-  <script src="/static/js/dashboard.js?v=7"></script>
+  <script src="/static/lib/chart.min.js?v=27"></script>
+  <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=27"></script>
+  <script src="/static/js/weather-fx.js?v=27"></script>
+  <script src="/static/js/dashboard.js?v=27"></script>
 </body>
 </html>

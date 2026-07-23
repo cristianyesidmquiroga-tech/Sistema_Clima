@@ -100,15 +100,8 @@ window.WeatherFX = {
       container.className = `gw-container sky-${mode}`;
     }
 
-    // Cambiar la imagen de la granja (finca)
-    const sceneImg = document.getElementById('sceneImg');
-    if (sceneImg) {
-      sceneImg.style.opacity = '0'; // fade out
-      setTimeout(() => {
-        sceneImg.src = `/static/bg_${mode}.png`;
-        sceneImg.style.opacity = '0.9'; // fade in
-      }, 300); // match css transition
-    }
+    // El fondo (bg_sunny.png) se mantiene siempre igual según lo solicitado por el usuario,
+    // solo cambia el tintado (overlay) a través de --container-bg.
 
     initParticles();
 
