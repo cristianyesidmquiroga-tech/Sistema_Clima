@@ -229,22 +229,22 @@ def obtener_stats_dia():
 
 
 def obtener_stats_agrupadas():
-    """Obtiene agregaciones por semana y mes usando strftime en SQLite via func"""
-    
+    """Obtiene agregaciones por semana y mes usando to_char (PostgreSQL)"""
+
     mensual = db.session.query(
-        func.strftime('%Y-%m', Lectura.timestamp).label('mes'),
+        func.to_char(Lectura.timestamp, 'YYYY-MM').label('mes'),
         func.max(Lectura.temp_exterior).label('temp_max'),
         func.min(Lectura.temp_exterior).label('temp_min'),
         func.max(Lectura.lluvia_dia).label('lluvia_max_diaria'),
         func.sum(Lectura.lluvia_hora).label('estimacion_lluvia_total')
-    ).group_by('mes').order_by(func.strftime('%Y-%m', Lectura.timestamp).desc()).limit(12).all()
-    
+    ).group_by('mes').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM').desc()).limit(12).all()
+
     semanal = db.session.query(
-        func.strftime('%Y-%W', Lectura.timestamp).label('semana'),
+        func.to_char(Lectura.timestamp, 'IYYY-IW').label('semana'),
         func.max(Lectura.temp_exterior).label('temp_max'),
         func.min(Lectura.temp_exterior).label('temp_min'),
         func.max(Lectura.lluvia_dia).label('lluvia_max_diaria')
-    ).group_by('semana').order_by(func.strftime('%Y-%W', Lectura.timestamp).desc()).limit(12).all()
+    ).group_by('semana').order_by(func.to_char(Lectura.timestamp, 'IYYY-IW').desc()).limit(12).all()
     
     return {
         "mensual": [
@@ -271,22 +271,22 @@ def obtener_analisis_historico(tipo="dias"):
     try:
         if tipo == "dias":
             query = db.session.query(
-                func.strftime('%Y-%m-%d', Lectura.timestamp).label('fecha'),
+                func.to_char(Lectura.timestamp, 'YYYY-MM-DD').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.strftime('%Y-%m-%d', Lectura.timestamp).desc()).limit(30).all()
+            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM-DD').desc()).limit(30).all()
         elif tipo == "meses":
             query = db.session.query(
-                func.strftime('%Y-%m', Lectura.timestamp).label('fecha'),
+                func.to_char(Lectura.timestamp, 'YYYY-MM').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.strftime('%Y-%m', Lectura.timestamp).desc()).limit(12).all()
+            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM').desc()).limit(12).all()
         elif tipo == "años":
             query = db.session.query(
-                func.strftime('%Y', Lectura.timestamp).label('fecha'),
+                func.to_char(Lectura.timestamp, 'YYYY').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.strftime('%Y', Lectura.timestamp).desc()).limit(5).all()
+            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY').desc()).limit(5).all()
         else:
             return []
             
