@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:18
+    container_name: clima_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-clima}
+      POSTGRES_PASSWORD: ${DB_PASS:-clima123}
+      POSTGRES_DB: ${DB_NAME:-clima_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-clima}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: clima_app
+    restart: unless-stopped
+    environment:
+      DB_USER: ${DB_USER:-clima}
+      DB_PASS: ${DB_PASS:-clima123}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

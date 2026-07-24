@@ -1,31 +1,8 @@
-# Sistema Clima - Finca Lagunitas
-# Archivos a ignorar en el repositorio Git
-
-# Base de datos local
-*.db
-*.db-shm
-*.db-wal
-data/
-
-# Logs del servidor
-*.log
-server.log
-
-# Python
 __pycache__/
 *.pyc
 *.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-
-# Variables de entorno (seguridad)
 .env
-.env.*
-
-# Editores
-.vscode/
-.idea/
-*.swp
+server.pid
+server_log.txt
+clima.db
+*.sqlite
