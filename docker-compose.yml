@@ -12,7 +12,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-clima}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-clima} -d ${DB_NAME:-clima_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
