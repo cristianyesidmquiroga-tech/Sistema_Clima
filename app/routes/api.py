@@ -1,12 +1,16 @@
+import os
 from flask import Blueprint, request, jsonify, render_template
 from app.models.models import (
-    guardar_lectura, obtener_ultima_lectura, 
+    guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico
 )
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
+
+STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
+ENABLE_TEST_ENDPOINT = os.environ.get('ENABLE_TEST_ENDPOINT', 'false').lower() == 'true'
 
 def get_moon_phase(date):
     """Calcula la fase lunar aproximada (0-7)"""
@@ -37,6 +41,9 @@ def recibir_datos():
 
     if not datos:
         return "No data", 400
+
+    if STATION_PASSKEY and datos.get('PASSKEY') != STATION_PASSKEY:
+        return "Forbidden", 403
 
     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Datos recibidos de la estación:")
     for k, v in datos.items():
@@ -95,6 +102,9 @@ def api_stats_comparative():
 
 @bp.route('/api/test')
 def api_test():
+    if not ENABLE_TEST_ENDPOINT:
+        return jsonify({"error": "Endpoint deshabilitado"}), 404
+
     datos_prueba = {
         'tempf': '82.5',
         'tempinf': '71.0',

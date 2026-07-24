@@ -1,3 +1,4 @@
+import os
 import subprocess
 import time
 import socket
@@ -6,12 +7,15 @@ import json
 import struct
 
 # ============================================================
-# CONFIGURAR ESTOS VALORES
+# CONFIGURACION: se toma de variables de entorno para no dejar
+# credenciales del WiFi en el codigo fuente. Ejecuta el script
+# asi (ejemplo en bash):
+#   WIFI_CASA="MiRed" CONTRASENA_CASA="miClave" IP_SERVIDOR="192.168.0.102" python scripts/configurar_estacion.py
 # ============================================================
-WIFI_CASA = "FAMILIA MUNOS"          # Nombre de tu WiFi de casa
-CONTRASENA_CASA = "41777932"                  # Contraseña de tu WiFi (edítala aquí)
-IP_SERVIDOR = "192.168.0.102"         # IP de tu PC en la red de casa
-PUERTO_SERVIDOR = 8080
+WIFI_CASA = os.environ.get("WIFI_CASA", "")
+CONTRASENA_CASA = os.environ.get("CONTRASENA_CASA", "")
+IP_SERVIDOR = os.environ.get("IP_SERVIDOR", "192.168.0.102")
+PUERTO_SERVIDOR = int(os.environ.get("PUERTO_SERVIDOR", "8080"))
 # ============================================================
 
 SAINLOGIC_SSID = "Sainlogic-3A2357"
@@ -190,10 +194,8 @@ def main():
     print("  CONFIGURADOR DE ESTACIÓN CLIMÁTICA SAINLOGIC")
     print("=" * 55)
 
-    if not CONTRASENA_CASA:
-        contrasena = input(f"\nIngresa la contraseña de '{WIFI_CASA}': ").strip()
-    else:
-        contrasena = CONTRASENA_CASA
+    ssid_casa = WIFI_CASA or input("\nIngresa el nombre de tu WiFi de casa: ").strip()
+    contrasena = CONTRASENA_CASA or input(f"Ingresa la contraseña de '{ssid_casa}': ").strip()
 
     print(f"\n[1] Conectando al hotspot de la estación...")
     conectar_wifi(SAINLOGIC_SSID)
@@ -209,18 +211,18 @@ def main():
             print(f"    Datos: {datos[:200]}...")
 
         print(f"\n[4] Configurando WiFi y servidor...")
-        configurar_via_http(ip_estacion, WIFI_CASA, contrasena, IP_SERVIDOR, PUERTO_SERVIDOR)
+        configurar_via_http(ip_estacion, ssid_casa, contrasena, IP_SERVIDOR, PUERTO_SERVIDOR)
     else:
         print(f"\n[3] Usando configuración UDP (broadcast)...")
 
     # Siempre envía UDP como respaldo
-    configurar_wifi_udp(WIFI_CASA, contrasena, IP_SERVIDOR, PUERTO_SERVIDOR)
+    configurar_wifi_udp(ssid_casa, contrasena, IP_SERVIDOR, PUERTO_SERVIDOR)
 
     print(f"\n[5] Esperando que la estación se configure (15 seg)...")
     time.sleep(15)
 
     print(f"\n[6] Reconectando a tu WiFi de casa...")
-    conectar_wifi(WIFI_CASA)
+    conectar_wifi(ssid_casa)
     time.sleep(5)
 
     print("\n" + "=" * 55)

@@ -16,6 +16,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    mem_limit: 512m
+    cpus: 1.0
 
   app:
     build: .
@@ -27,11 +29,16 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
+      STATION_PASSKEY: ${STATION_PASSKEY:-}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
+      ENABLE_TEST_ENDPOINT: ${ENABLE_TEST_ENDPOINT:-false}
     expose:
       - "8080"
     depends_on:
       db:
         condition: service_healthy
+    mem_limit: 512m
+    cpus: 1.0
 
 volumes:
   pgdata:

@@ -1,0 +1,12 @@
+.git
+.gitignore
+.env
+.env.example
+.claude
+__pycache__
+*.pyc
+*.pyo
+clima.db
+server.pid
+server_log.txt
+docs
