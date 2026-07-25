@@ -103,9 +103,19 @@ function updateClock() {
 setInterval(updateClock, 1000);
 
 // ─── STATUS ───────────────────────────────────────────────────
-function updateStatus(online) {
-  els.statusDot.className = 'gw-status-dot ' + (online ? 'online' : 'offline');
-  els.statusText.textContent = online ? 'Estación: En línea' : 'Estación: Desconectada';
+const STATUS_LABELS = {
+  real: 'Estación: En línea',
+  estimado: 'Estación sin señal — mostrando estimado',
+  real_desactualizado: 'Estación sin señal — último dato disponible',
+  offline: 'Estación: Desconectada',
+};
+
+function updateStatus(fuente) {
+  const clase = fuente === 'real' ? 'online'
+              : fuente === 'estimado' ? 'estimado'
+              : 'offline';
+  els.statusDot.className = 'gw-status-dot ' + clase;
+  els.statusText.textContent = STATUS_LABELS[fuente] || STATUS_LABELS.offline;
   updateClock();
 }
 
@@ -147,9 +157,9 @@ async function fetchRealTime() {
 
     renderMainChart();
     renderForecastCards(); // actualizar solo las tarjetas, sin refetch Open-Meteo
-    updateStatus(true);
+    updateStatus(lastRawData.fuente || 'real');
   } catch {
-    updateStatus(false);
+    updateStatus('offline');
   }
 }
 

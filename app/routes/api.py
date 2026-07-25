@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Blueprint, request, jsonify, render_template
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
@@ -11,6 +12,39 @@ bp = Blueprint('api', __name__)
 
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
 ENABLE_TEST_ENDPOINT = os.environ.get('ENABLE_TEST_ENDPOINT', 'false').lower() == 'true'
+
+FINCA_LAT = 5.96
+FINCA_LON = -73.63
+DATOS_DESACTUALIZADOS_MIN = 15
+
+
+def obtener_estimado_open_meteo():
+    """Clima actual aproximado (Open-Meteo) para usar cuando la estacion no reporta."""
+    try:
+        r = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": FINCA_LAT,
+                "longitude": FINCA_LON,
+                "current": "temperature_2m,relative_humidity_2m,precipitation,"
+                           "wind_speed_10m,wind_direction_10m,surface_pressure,uv_index",
+                "timezone": "America/Bogota",
+            },
+            timeout=5,
+        )
+        r.raise_for_status()
+        cur = r.json().get("current", {})
+        return {
+            "temp_exterior": cur.get("temperature_2m"),
+            "humedad_exterior": cur.get("relative_humidity_2m"),
+            "velocidad_viento": cur.get("wind_speed_10m"),
+            "direccion_viento": cur.get("wind_direction_10m"),
+            "presion_relativa": cur.get("surface_pressure"),
+            "uv_index": cur.get("uv_index"),
+            "lluvia_hora": cur.get("precipitation"),
+        }
+    except Exception:
+        return None
 
 def get_moon_phase(date):
     """Calcula la fase lunar aproximada (0-7)"""
@@ -57,8 +91,29 @@ def api_actual():
     datos = obtener_ultima_lectura()
     if not datos:
         return jsonify({"error": "Sin datos aún. Esperando la estación..."}), 404
-        
+
     datos["fase_lunar"] = get_moon_phase(datetime.now())
+
+    timestamp = datos.get("timestamp")
+    edad_min = None
+    if timestamp:
+        try:
+            ts = timestamp[:-1] if timestamp.endswith("Z") else timestamp
+            edad_min = (datetime.utcnow() - datetime.fromisoformat(ts)).total_seconds() / 60
+        except Exception:
+            edad_min = None
+
+    if edad_min is not None and edad_min > DATOS_DESACTUALIZADOS_MIN:
+        estimado = obtener_estimado_open_meteo()
+        if estimado:
+            datos.update(estimado)
+            datos["fuente"] = "estimado"
+            datos["ultimo_dato_real"] = timestamp
+        else:
+            datos["fuente"] = "real_desactualizado"
+    else:
+        datos["fuente"] = "real"
+
     return jsonify(datos)
 
 @bp.route('/api/historial')
