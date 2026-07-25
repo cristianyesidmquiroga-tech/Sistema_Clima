@@ -177,7 +177,43 @@ function updateFavicon(iconSrc) {
   if (link && link.href !== location.origin + iconSrc) link.href = iconSrc;
 }
 
+// ─── ALERTAS DE CLIMA (útiles para la finca) ──────────────────
+const UMBRAL_HELADA = 5;      // °C
+const UMBRAL_LLUVIA = 10;     // mm/h
+const UMBRAL_VIENTO = 40;     // km/h (ráfaga)
+
+function updateAlerts(data) {
+  const banner = document.getElementById('gwAlertBanner');
+  if (!banner) return;
+
+  const alertas = [];
+  const temp = parseFloat(data.temp_exterior);
+  const lluviaHora = parseFloat(data.lluvia_hora);
+  const rafaga = parseFloat(data.rafaga_viento);
+
+  if (!isNaN(temp) && temp <= UMBRAL_HELADA) {
+    alertas.push({ clase: 'frio', icono: '❄️', texto: `Riesgo de helada: ${temp.toFixed(1)}°C` });
+  }
+  if (!isNaN(lluviaHora) && lluviaHora >= UMBRAL_LLUVIA) {
+    alertas.push({ clase: 'lluvia', icono: '🌧️', texto: `Lluvia fuerte: ${lluviaHora.toFixed(1)} mm/h` });
+  }
+  if (!isNaN(rafaga) && rafaga >= UMBRAL_VIENTO) {
+    alertas.push({ clase: 'viento', icono: '💨', texto: `Viento fuerte: ráfagas de ${Math.round(rafaga)} km/h` });
+  }
+
+  if (!alertas.length) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+  banner.style.display = 'flex';
+  banner.innerHTML = alertas.map(a =>
+    `<div class="gw-alert ${a.clase}">${a.icono} ${a.texto}</div>`
+  ).join('');
+}
+
 function renderRealTime(data) {
+  updateAlerts(data);
   const cond = getCondition(data);
   const tempC = parseFloat(data.temp_exterior);
 

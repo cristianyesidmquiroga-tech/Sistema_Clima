@@ -242,6 +242,26 @@ body {
 .gw-weather-title { font-size: 20px; font-weight: 400; margin-bottom: 4px; }
 .gw-weather-desc { font-size: 15px; color: var(--text-secondary); }
 
+/* ─── ALERTAS ─── */
+.gw-alert-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.gw-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.gw-alert.frio  { background: rgba(79,195,247,0.18); color: #4fc3f7; border: 1px solid rgba(79,195,247,0.4); }
+.gw-alert.lluvia{ background: rgba(138,180,248,0.18); color: #8ab4f8; border: 1px solid rgba(138,180,248,0.4); }
+.gw-alert.viento{ background: rgba(255,107,91,0.18); color: #ff6b5b; border: 1px solid rgba(255,107,91,0.4); }
+
 /* ─── DETALLES RÁPIDOS ─── */
 .gw-details {
   font-size: 13px;
