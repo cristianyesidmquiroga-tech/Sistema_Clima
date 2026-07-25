@@ -34,6 +34,8 @@ services:
       ENABLE_TEST_ENDPOINT: ${ENABLE_TEST_ENDPOINT:-false}
     expose:
       - "8080"
+    ports:
+      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
