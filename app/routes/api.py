@@ -1,10 +1,12 @@
 import os
+import io
 import requests
-from flask import Blueprint, request, jsonify, render_template
+from flask import Blueprint, request, jsonify, render_template, send_file
+from openpyxl import Workbook
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
-    obtener_analisis_historico, obtener_datos_por_fecha
+    obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango
 )
 from datetime import datetime
 
@@ -201,3 +203,43 @@ def api_fecha():
     if datos is None:
         return jsonify({"error": "Formato de fecha invalido, usa YYYY-MM-DD"}), 400
     return jsonify(datos)
+
+COLUMNAS_EXPORTAR = [
+    ("timestamp", "Fecha/Hora (UTC)"),
+    ("temp_exterior", "Temp. Exterior (C)"),
+    ("humedad_exterior", "Humedad Exterior (%)"),
+    ("velocidad_viento", "Viento (km/h)"),
+    ("rafaga_viento", "Rafaga (km/h)"),
+    ("direccion_viento", "Direccion Viento (grados)"),
+    ("lluvia_hora", "Lluvia por hora (mm)"),
+    ("lluvia_dia", "Lluvia del dia (mm)"),
+    ("presion_relativa", "Presion Relativa (hPa)"),
+    ("uv_index", "Indice UV"),
+    ("radiacion_solar", "Radiacion Solar (W/m2)"),
+    ("punto_rocio", "Punto de Rocio (C)"),
+    ("sensacion_termica", "Sensacion Termica (C)"),
+]
+
+@bp.route('/api/exportar')
+def api_exportar():
+    dias = request.args.get('dias', 7, type=int)
+    lecturas = obtener_lecturas_rango(dias)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Clima"
+    ws.append([titulo for _, titulo in COLUMNAS_EXPORTAR])
+    for l in lecturas:
+        ws.append([l.get(campo) for campo, _ in COLUMNAS_EXPORTAR])
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+
+    nombre = f"clima_finca_lagunitas_{datetime.utcnow().strftime('%Y-%m-%d')}.xlsx"
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=nombre,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )

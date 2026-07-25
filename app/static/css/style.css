@@ -535,22 +535,6 @@ body {
 }
 .gw-history-chart-container { width: 100%; height: 160px; }
 
-.gw-date-search { display: flex; align-items: center; gap: 8px; }
-.gw-date-search input[type="date"] {
-  background: rgba(0,0,0,0.2);
-  border: 1px solid var(--divider);
-  color: var(--text-primary);
-  font-family: inherit;
-  font-size: 12px;
-  padding: 5px 10px;
-  border-radius: 20px;
-  outline: none;
-  color-scheme: dark;
-}
-.gw-date-search input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.8);
-  cursor: pointer;
-}
 .gw-fecha-btn {
   background: transparent;
   border: 1px solid var(--tab-accent);
@@ -564,6 +548,8 @@ body {
   transition: all 0.2s;
 }
 .gw-fecha-btn:hover { background: rgba(251,188,4,0.15); }
+.gw-export-row { margin-top: 12px; text-align: center; }
+.gw-export-row a.gw-fecha-btn { display: inline-block; text-decoration: none; }
 
 .gw-history-analysis {
   font-size: 13px;

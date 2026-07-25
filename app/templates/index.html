@@ -201,18 +201,9 @@
       <div id="gwHistoryAnalysis" class="gw-history-analysis"></div>
     </section>
 
-    <div class="gw-divider"></div>
-
-    <section class="gw-history-panel">
-      <div class="gw-history-header">
-        <h3 class="gw-history-title">📅 Buscar por Fecha</h3>
-        <div class="gw-date-search">
-          <input type="date" id="gwFechaInput">
-          <button id="gwFechaBtn" class="gw-fecha-btn">Buscar</button>
-        </div>
-      </div>
-      <div id="gwFechaResultado" class="gw-history-analysis"></div>
-    </section>
+    <div class="gw-export-row">
+      <a href="/api/exportar?dias=30" class="gw-fecha-btn" download>⬇️ Descargar Excel (últimos 30 días)</a>
+    </div>
 
     <footer class="gw-footer">
       <span id="gwStatusText">Estación: Conectando...</span>

@@ -610,45 +610,6 @@ async function fetchAnalisisHistorico() {
   } catch { }
 }
 
-// ─── BÚSQUEDA POR FECHA ───────────────────────────────────────
-async function buscarFecha() {
-  const input = document.getElementById('gwFechaInput');
-  const resEl = document.getElementById('gwFechaResultado');
-  if (!input || !resEl || !input.value) return;
-
-  resEl.style.display = 'block';
-  resEl.innerHTML = 'Buscando...';
-
-  try {
-    const res = await fetch(`/api/fecha?fecha=${input.value}`);
-    const data = await res.json();
-
-    if (data.error) {
-      resEl.innerHTML = `⚠️ ${data.error}`;
-      return;
-    }
-    if (!data.con_datos) {
-      resEl.innerHTML = `No hay datos guardados para el ${data.fecha}.`;
-      return;
-    }
-
-    resEl.innerHTML = `
-      <strong>Clima del ${data.fecha}:</strong><br>
-      🌡️ Temp. Promedio: ${convertTemp(data.temp_avg)}${tempLabel()} (Máx: ${convertTemp(data.temp_max)}${tempLabel()}, Mín: ${convertTemp(data.temp_min)}${tempLabel()})<br>
-      💧 Humedad: Prom ${data.hum_avg ?? '--'}% (Máx ${data.hum_max ?? '--'}%, Mín ${data.hum_min ?? '--'}%)<br>
-      🌬️ Viento Máx: ${data.viento_max ?? '--'} km/h (Ráfaga: ${data.rafaga_max ?? '--'} km/h)<br>
-      🌧️ Lluvia del día: ${data.lluvia_total ?? '--'} mm<br>
-      ☀️ UV Máximo: ${data.uv_max ?? '--'}<br>
-      <span style="color:var(--text-secondary);font-size:12px;">(${data.lecturas} lecturas registradas ese día)</span>
-    `;
-  } catch {
-    resEl.innerHTML = '⚠️ Error consultando esa fecha.';
-  }
-}
-
-const fechaBtn = document.getElementById('gwFechaBtn');
-if (fechaBtn) fechaBtn.addEventListener('click', buscarFecha);
-
 // ─── LISTENERS ───────────────────────────────────────────────
 document.querySelectorAll('.gw-tab').forEach(btn => {
   btn.addEventListener('click', e => {

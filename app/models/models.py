@@ -276,6 +276,12 @@ def obtener_stats_agrupadas():
     }
 
 
+def obtener_lecturas_rango(dias=7):
+    limite = datetime.utcnow() - timedelta(days=dias)
+    lecturas = Lectura.query.filter(Lectura.timestamp >= limite).order_by(Lectura.timestamp.asc()).all()
+    return [l.to_dict() for l in lecturas]
+
+
 def obtener_datos_por_fecha(fecha_str):
     """Estadisticas del clima para un dia especifico (YYYY-MM-DD)."""
     try:
