@@ -337,6 +337,7 @@ body {
   display: inline-block;
   transform-origin: center;
 }
+.gw-wind-icon-img { width: 18px; height: 18px; vertical-align: middle; }
 .gw-wind-time {
   font-size: 11px;
   color: var(--text-secondary);

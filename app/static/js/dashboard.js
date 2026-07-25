@@ -4,7 +4,7 @@
 
 const FINCA_LAT = 5.96;
 const FINCA_LON = -73.63;
-const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode&timezone=America%2FBogota&forecast_days=2`;
+const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m,wind_direction_10m&timezone=America%2FBogota&forecast_days=2`;
 
 const WMO = {
   0:{t:'Despejado',i:'/static/icon-sun.svg'},
@@ -282,10 +282,32 @@ function alinearPorHora(raw) {
   return result;
 }
 
-function renderColumnCards(container, aligned, getValue, getLabel) {
+const TEMP_UMBRAL_C = 18;
+function tempIcon(tempC) {
+  const c = parseFloat(tempC);
+  if (isNaN(c)) return '🌡️';
+  const src = c < TEMP_UMBRAL_C ? '/static/icon-temp-cold.svg' : '/static/icon-temp-hot.svg';
+  return `<img src="${src}" class="gw-wind-icon-img" alt="temp">`;
+}
+
+function obtenerOMLookup() {
+  const hourly = forecastOMData?.hourly;
+  const omLookup = {};
+  if (hourly) {
+    for (let i = 0; i < hourly.time.length; i++) {
+      const dt = new Date(hourly.time[i]);
+      const key = `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}-${dt.getHours()}`;
+      omLookup[key] = i;
+    }
+  }
+  return { hourly, omLookup };
+}
+
+function renderColumnCards(container, aligned, getValue, getLabel, getForecast) {
   const now = new Date();
   const nowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
   const hours = getDisplayHours();
+  const { hourly, omLookup } = getForecast ? obtenerOMLookup() : { hourly: null, omLookup: {} };
   container.innerHTML = '';
   container.style.display = 'flex';
   aligned.forEach((d, i) => {
@@ -296,18 +318,34 @@ function renderColumnCards(container, aligned, getValue, getLabel) {
     let extraClass = '';
     if (isNow)                 { hourLabel = 'Ahora'; extraClass = ' today'; }
     else if (h && h < now)    extraClass = ' past';
+
+    let pronostico = null;
+    if (!d && !isNow && h > now && getForecast && hourly && omLookup[hKey] !== undefined) {
+      pronostico = getForecast(hourly, omLookup[hKey]);
+    }
+
     const col = document.createElement('div');
     col.className = 'gw-wind-col' + extraClass;
     const isEstimado = d && d.estimado;
-    col.innerHTML = (d || isNow) ? `
-      <div class="gw-wind-speed${isEstimado ? ' estimated' : ''}">${isEstimado ? '~' : ''}${getValue(d, isNow)}</div>
-      <div class="gw-wind-arrow">${d ? getLabel(d, isNow) : '--'}</div>
-      <div class="gw-wind-time">${hourLabel}</div>
-    ` : `
-      <div class="gw-wind-speed">--</div>
-      <div class="gw-wind-arrow">--</div>
-      <div class="gw-wind-time">${hourLabel}</div>
-    `;
+    if (d || isNow) {
+      col.innerHTML = `
+        <div class="gw-wind-speed${isEstimado ? ' estimated' : ''}">${isEstimado ? '~' : ''}${getValue(d, isNow)}</div>
+        <div class="gw-wind-arrow">${d ? getLabel(d, isNow) : '--'}</div>
+        <div class="gw-wind-time">${hourLabel}</div>
+      `;
+    } else if (pronostico) {
+      col.innerHTML = `
+        <div class="gw-wind-speed estimated">~${pronostico.value}</div>
+        <div class="gw-wind-arrow">${pronostico.label}</div>
+        <div class="gw-wind-time">${hourLabel}</div>
+      `;
+    } else {
+      col.innerHTML = `
+        <div class="gw-wind-speed">--</div>
+        <div class="gw-wind-arrow">--</div>
+        <div class="gw-wind-time">${hourLabel}</div>
+      `;
+    }
     container.appendChild(col);
   });
 }
@@ -329,7 +367,11 @@ function renderMainChart() {
       if (isNow && tempNow) return tempNow;
       if (!d) return '--';
       return Math.round(parseFloat(convertTemp(d.temp_exterior))) + '°';
-    }, d => '🌡️');
+    }, (d, isNow) => tempIcon(isNow && tempNow ? parseFloat(lastRawData.temp_exterior) : d?.temp_exterior),
+      (hourly, idx) => ({
+        value: Math.round(convertTemp(hourly.temperature_2m[idx])) + '°',
+        label: tempIcon(hourly.temperature_2m[idx])
+      }));
   } else if (currentTab === 'rain') {
     canvas.style.display = 'none';
     const humNow = lastRawData ? Math.round(lastRawData.humedad_exterior) + '%' : null;
@@ -337,7 +379,11 @@ function renderMainChart() {
       if (isNow && humNow) return humNow;
       if (!d) return '--';
       return Math.round(parseFloat(d.humedad_exterior) || 0) + '%';
-    }, d => '💧');
+    }, d => '💧',
+      (hourly, idx) => ({
+        value: Math.round(hourly.relative_humidity_2m[idx]) + '%',
+        label: '💧'
+      }));
   } else if (currentTab === 'wind') {
     canvas.style.display = 'none';
     const windNow = lastRawData ? Math.round(lastRawData.velocidad_viento) + ' km/h' : null;
@@ -345,11 +391,24 @@ function renderMainChart() {
       if (isNow && windNow) return windNow;
       if (!d) return '--';
       return Math.round(parseFloat(d.velocidad_viento) || 0) + ' km/h';
-    }, d => '↓');
+    }, d => '↓',
+      (hourly, idx) => ({
+        value: Math.round(hourly.wind_speed_10m[idx]) + ' km/h',
+        label: '↓'
+      }));
+    const { hourly, omLookup } = obtenerOMLookup();
+    const hours = getDisplayHours();
     const arrows = windContainer.querySelectorAll('.gw-wind-arrow');
     aligned.forEach((d, i) => {
-      if (d && arrows[i]) {
+      if (!arrows[i]) return;
+      if (d) {
         arrows[i].style.transform = `rotate(${parseFloat(d.direccion_viento) || 0}deg)`;
+      } else if (hourly) {
+        const h = hours[i];
+        const key = `${h.getFullYear()}-${h.getMonth()}-${h.getDate()}-${h.getHours()}`;
+        if (omLookup[key] !== undefined) {
+          arrows[i].style.transform = `rotate(${hourly.wind_direction_10m[omLookup[key]] || 0}deg)`;
+        }
       }
     });
   }
