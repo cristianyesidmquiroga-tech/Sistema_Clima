@@ -6,7 +6,7 @@ cada hora si ya toca enviar segun REPORT_FREQUENCY.
 import os
 import time
 import smtplib
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from email.message import EmailMessage
 
 import requests
@@ -73,7 +73,7 @@ def run():
     ultimo_envio = None
     while True:
         try:
-            ahora = datetime.utcnow()
+            ahora = datetime.now(timezone.utc)
             hoy = ahora.date()
             if debe_enviar_hoy(ahora) and ultimo_envio != hoy:
                 excel = descargar_excel()

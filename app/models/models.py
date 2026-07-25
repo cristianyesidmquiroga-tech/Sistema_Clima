@@ -111,25 +111,34 @@ def inhg_a_hpa(inhg):
 
 
 def aplicar_compensacion_termica(temp_c, radiacion, viento_kmh):
+    """Corrige el autocalentamiento del sensor exterior por sol directo
+    sobre su carcasa. Calibrado contra clima.com/Google el 2026-07-25:
+    con radiacion=1453 W/m2 y viento=1.6 km/h, el sensor marcaba ~30.6C
+    crudo cuando la referencia real era ~20-23C (offset necesario ~8C)."""
     if temp_c is None or radiacion is None or viento_kmh is None:
         return temp_c
-    
+
     try:
         rad = float(radiacion)
         viento = float(viento_kmh)
         temp = float(temp_c)
-        
-        offset = 0.0
-        if rad > 800:
-            if viento < 3: offset = 2.0
-            elif viento < 10: offset = 1.0
-            else: offset = 0.5
-        elif rad > 500:
-            if viento < 5: offset = 1.0
-            elif viento < 15: offset = 0.5
-        elif rad > 300:
-            if viento < 5: offset = 0.5
-            
+
+        if rad > 1200:   base = 8.0
+        elif rad > 900:  base = 6.0
+        elif rad > 600:  base = 4.0
+        elif rad > 300:  base = 2.0
+        else:             base = 0.0
+
+        if base == 0.0:
+            return round(temp, 1)
+
+        # El viento enfria por conveccion la carcasa del sensor, reduce el error
+        if viento >= 10:   factor = 0.4
+        elif viento >= 5:  factor = 0.6
+        elif viento >= 3:  factor = 0.8
+        else:               factor = 1.0
+
+        offset = base * factor
         return round(temp - offset, 1)
     except Exception:
         return temp_c
