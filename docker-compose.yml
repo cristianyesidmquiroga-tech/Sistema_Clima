@@ -42,5 +42,21 @@ services:
     mem_limit: 512m
     cpus: 1.0
 
+  poller:
+    build: .
+    container_name: clima_poller
+    restart: unless-stopped
+    command: ["python", "scripts/wu_poller.py"]
+    environment:
+      WU_STATION_ID: ${WU_STATION_ID:-}
+      WU_API_KEY: ${WU_API_KEY:-}
+      WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-60}
+      WU_TARGET_URL: http://app:8080/data/report/
+      STATION_PASSKEY: ${STATION_PASSKEY:-}
+    depends_on:
+      - app
+    mem_limit: 128m
+    cpus: 0.25
+
 volumes:
   pgdata:
