@@ -118,6 +118,30 @@ body {
   body { padding: 12px 8px; }
 }
 
+/* ─── IMAGEN DE CABECERA ─── */
+.gw-hero {
+  position: relative;
+  margin: -20px -24px 18px -24px;
+  height: 170px;
+  overflow: hidden;
+}
+.gw-hero-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 65%;
+  display: block;
+}
+.gw-hero-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 40%, var(--container-bg) 100%);
+  transition: background-color 1s ease;
+}
+@media (max-width: 700px) {
+  .gw-hero { height: 130px; }
+}
+
 /* ─── CABECERA ─── */
 .gw-header {
   display: flex;

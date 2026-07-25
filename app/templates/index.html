@@ -13,6 +13,12 @@
   <!-- CONTENIDO PRINCIPAL -->
   <div class="gw-container">
 
+    <!-- IMAGEN DE CABECERA -->
+    <div class="gw-hero">
+      <img src="/static/finca_bg.png" alt="Finca Lagunitas" class="gw-hero-img">
+      <div class="gw-hero-fade"></div>
+    </div>
+
     <!-- CANVAS PARA EFECTOS ANIMADOS (dentro de la tarjeta) -->
     <canvas id="weatherCanvas" class="weather-canvas"></canvas>
 
@@ -173,28 +179,6 @@
           <div class="gw-info-scale">0-15: brisa suave 🍃 | 15-30: viento normal 🌿 | 30-50: ventarrón 🌬️ | 50+: fuerte 💨</div>
         </div>
       </div>
-      <div class="gw-extra-card">
-        <div class="gw-extra-header">
-          <div class="gw-extra-title">Temperatura Interior</div>
-          <button class="gw-info-btn" aria-label="Info">?</button>
-        </div>
-        <div class="gw-extra-val" id="gwTempInt">-- °C</div>
-        <div class="gw-info-popover">
-          <strong>Temperatura dentro de la casa.</strong>
-          <div class="gw-info-scale">22-26°C: ideal ✅ | &lt;18°C: fresco ❄️ | &gt;30°C: caluroso 🔥</div>
-        </div>
-      </div>
-      <div class="gw-extra-card">
-        <div class="gw-extra-header">
-          <div class="gw-extra-title">Humedad Interior</div>
-          <button class="gw-info-btn" aria-label="Info">?</button>
-        </div>
-        <div class="gw-extra-val" id="gwHumInt">-- %</div>
-        <div class="gw-info-popover">
-          <strong>Vapor de agua en el aire dentro de la casa.</strong>
-          <div class="gw-info-scale">40-60%: ideal ✅ | &gt;70%: moho 🦠 | &lt;30%: muy seco, alergias 🤧</div>
-        </div>
-      </div>
     </section>
 
     <div class="gw-divider"></div>
@@ -212,6 +196,19 @@
         <canvas id="gwHistoryChart"></canvas>
       </div>
       <div id="gwHistoryAnalysis" class="gw-history-analysis"></div>
+    </section>
+
+    <div class="gw-divider"></div>
+
+    <section class="gw-history-panel">
+      <div class="gw-history-header">
+        <h3 class="gw-history-title">📅 Buscar por Fecha</h3>
+        <div class="gw-date-search">
+          <input type="date" id="gwFechaInput">
+          <button id="gwFechaBtn" class="gw-fecha-btn">Buscar</button>
+        </div>
+      </div>
+      <div id="gwFechaResultado" class="gw-history-analysis"></div>
     </section>
 
     <footer class="gw-footer">

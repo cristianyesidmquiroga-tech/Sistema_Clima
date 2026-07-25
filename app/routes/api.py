@@ -4,7 +4,7 @@ from flask import Blueprint, request, jsonify, render_template
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
-    obtener_analisis_historico
+    obtener_analisis_historico, obtener_datos_por_fecha
 )
 from datetime import datetime
 
@@ -190,4 +190,14 @@ def dashboard():
 def api_analisis():
     tipo = request.args.get('tipo', 'dias')
     datos = obtener_analisis_historico(tipo)
+    return jsonify(datos)
+
+@bp.route('/api/fecha')
+def api_fecha():
+    fecha = request.args.get('fecha')
+    if not fecha:
+        return jsonify({"error": "Falta el parametro 'fecha' (YYYY-MM-DD)"}), 400
+    datos = obtener_datos_por_fecha(fecha)
+    if datos is None:
+        return jsonify({"error": "Formato de fecha invalido, usa YYYY-MM-DD"}), 400
     return jsonify(datos)

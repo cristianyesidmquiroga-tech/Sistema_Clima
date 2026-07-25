@@ -276,6 +276,48 @@ def obtener_stats_agrupadas():
     }
 
 
+def obtener_datos_por_fecha(fecha_str):
+    """Estadisticas del clima para un dia especifico (YYYY-MM-DD)."""
+    try:
+        inicio = datetime.strptime(fecha_str, "%Y-%m-%d")
+    except ValueError:
+        return None
+    fin = inicio + timedelta(days=1)
+
+    stats = db.session.query(
+        func.count(Lectura.id).label('cantidad'),
+        func.avg(Lectura.temp_exterior).label('temp_avg'),
+        func.max(Lectura.temp_exterior).label('temp_max'),
+        func.min(Lectura.temp_exterior).label('temp_min'),
+        func.avg(Lectura.humedad_exterior).label('hum_avg'),
+        func.max(Lectura.humedad_exterior).label('hum_max'),
+        func.min(Lectura.humedad_exterior).label('hum_min'),
+        func.max(Lectura.velocidad_viento).label('viento_max'),
+        func.max(Lectura.rafaga_viento).label('rafaga_max'),
+        func.max(Lectura.lluvia_dia).label('lluvia_total'),
+        func.max(Lectura.uv_index).label('uv_max'),
+    ).filter(Lectura.timestamp >= inicio, Lectura.timestamp < fin).first()
+
+    if not stats or not stats.cantidad:
+        return {"fecha": fecha_str, "con_datos": False}
+
+    return {
+        "fecha": fecha_str,
+        "con_datos": True,
+        "lecturas": stats.cantidad,
+        "temp_avg": round(stats.temp_avg, 1) if stats.temp_avg is not None else None,
+        "temp_max": stats.temp_max,
+        "temp_min": stats.temp_min,
+        "hum_avg": round(stats.hum_avg, 1) if stats.hum_avg is not None else None,
+        "hum_max": stats.hum_max,
+        "hum_min": stats.hum_min,
+        "viento_max": stats.viento_max,
+        "rafaga_max": stats.rafaga_max,
+        "lluvia_total": stats.lluvia_total,
+        "uv_max": stats.uv_max,
+    }
+
+
 def obtener_analisis_historico(tipo="dias"):
     try:
         if tipo == "dias":

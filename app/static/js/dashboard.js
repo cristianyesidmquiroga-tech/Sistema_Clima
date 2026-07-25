@@ -286,10 +286,6 @@ function renderColumnCards(container, aligned, getValue, getLabel) {
     const h = hours[i];
     const hKey = `${h.getFullYear()}-${h.getMonth()}-${h.getDate()}-${h.getHours()}`;
     const isNow = hKey === nowKey;
-    const isFuture = h > now;
-    // Ocultar horas futuras sin datos y horas sin datos que no sean "Ahora"
-    if (!d && !isNow) return;
-    if (isFuture && !d) return;
     let hourLabel = formatHour(h);
     let extraClass = '';
     if (isNow)                 { hourLabel = 'Ahora'; extraClass = ' today'; }
@@ -297,15 +293,15 @@ function renderColumnCards(container, aligned, getValue, getLabel) {
     const col = document.createElement('div');
     col.className = 'gw-wind-col' + extraClass;
     const isEstimado = d && d.estimado;
-    col.innerHTML = d ? `
+    col.innerHTML = (d || isNow) ? `
       <div class="gw-wind-speed${isEstimado ? ' estimated' : ''}">${isEstimado ? '~' : ''}${getValue(d, isNow)}</div>
-      <div class="gw-wind-arrow">${getLabel(d, isNow)}</div>
+      <div class="gw-wind-arrow">${d ? getLabel(d, isNow) : '--'}</div>
       <div class="gw-wind-time">${hourLabel}</div>
-    ` : (isNow ? `
-      <div class="gw-wind-speed">${getValue(null, true)}</div>
+    ` : `
+      <div class="gw-wind-speed">--</div>
       <div class="gw-wind-arrow">--</div>
       <div class="gw-wind-time">${hourLabel}</div>
-    ` : '');
+    `;
     container.appendChild(col);
   });
 }
@@ -412,6 +408,10 @@ function renderForecastCards() {
       temp = convertTemp(hourly.temperature_2m[idx]);
       const code = hourly.weathercode[idx];
       cond = code !== null ? (WMO[code] || {t:'Variable',i:'/static/icon-cloudy.svg'}) : {t:'--',i:'/static/icon-cloudy.svg'};
+      const esNoche = h.getHours() < 6 || h.getHours() > 19;
+      if (esNoche && cond.i === '/static/icon-sun.svg') {
+        cond = { t: cond.t, i: '/static/icon-night.svg' };
+      }
     }
 
     const col = document.createElement('div');
@@ -508,6 +508,45 @@ async function fetchAnalisisHistorico() {
     });
   } catch { }
 }
+
+// ─── BÚSQUEDA POR FECHA ───────────────────────────────────────
+async function buscarFecha() {
+  const input = document.getElementById('gwFechaInput');
+  const resEl = document.getElementById('gwFechaResultado');
+  if (!input || !resEl || !input.value) return;
+
+  resEl.style.display = 'block';
+  resEl.innerHTML = 'Buscando...';
+
+  try {
+    const res = await fetch(`/api/fecha?fecha=${input.value}`);
+    const data = await res.json();
+
+    if (data.error) {
+      resEl.innerHTML = `⚠️ ${data.error}`;
+      return;
+    }
+    if (!data.con_datos) {
+      resEl.innerHTML = `No hay datos guardados para el ${data.fecha}.`;
+      return;
+    }
+
+    resEl.innerHTML = `
+      <strong>Clima del ${data.fecha}:</strong><br>
+      🌡️ Temp. Promedio: ${convertTemp(data.temp_avg)}${tempLabel()} (Máx: ${convertTemp(data.temp_max)}${tempLabel()}, Mín: ${convertTemp(data.temp_min)}${tempLabel()})<br>
+      💧 Humedad: Prom ${data.hum_avg ?? '--'}% (Máx ${data.hum_max ?? '--'}%, Mín ${data.hum_min ?? '--'}%)<br>
+      🌬️ Viento Máx: ${data.viento_max ?? '--'} km/h (Ráfaga: ${data.rafaga_max ?? '--'} km/h)<br>
+      🌧️ Lluvia del día: ${data.lluvia_total ?? '--'} mm<br>
+      ☀️ UV Máximo: ${data.uv_max ?? '--'}<br>
+      <span style="color:var(--text-secondary);font-size:12px;">(${data.lecturas} lecturas registradas ese día)</span>
+    `;
+  } catch {
+    resEl.innerHTML = '⚠️ Error consultando esa fecha.';
+  }
+}
+
+const fechaBtn = document.getElementById('gwFechaBtn');
+if (fechaBtn) fechaBtn.addEventListener('click', buscarFecha);
 
 // ─── LISTENERS ───────────────────────────────────────────────
 document.querySelectorAll('.gw-tab').forEach(btn => {
