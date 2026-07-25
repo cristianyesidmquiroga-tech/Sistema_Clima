@@ -172,6 +172,11 @@ function getWindDir(deg) {
   return arr[(val % 16)];
 }
 
+function updateFavicon(iconSrc) {
+  const link = document.querySelector("link[rel='icon']");
+  if (link && link.href !== location.origin + iconSrc) link.href = iconSrc;
+}
+
 function renderRealTime(data) {
   const cond = getCondition(data);
   const tempC = parseFloat(data.temp_exterior);
@@ -179,6 +184,7 @@ function renderRealTime(data) {
   els.temp.textContent      = Math.round(tempUnit === 'F' ? convertTemp(tempC) : tempC);
   els.desc.textContent      = cond.text;
   els.icon.src              = cond.icon;
+  updateFavicon(cond.icon);
   els.lluviaHoy.textContent = data.lluvia_dia ?? 0;
   els.humedad.textContent   = data.humedad_exterior ?? '--';
   els.viento.textContent    = data.velocidad_viento ?? '--';
