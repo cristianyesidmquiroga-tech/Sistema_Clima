@@ -135,6 +135,15 @@ def aplicar_compensacion_termica(temp_c, radiacion, viento_kmh):
         return temp_c
 
 
+def a_entero(valor):
+    if valor is None:
+        return None
+    try:
+        return int(round(float(valor)))
+    except Exception:
+        return None
+
+
 def get_field(datos, *nombres):
     for nombre in nombres:
         valor = datos.get(nombre)
@@ -169,13 +178,13 @@ def guardar_lectura(datos_raw):
             humedad_interior=get_field(datos_raw, 'humidityin', 'indoorhumidity'),
             velocidad_viento=viento_vel,
             rafaga_viento=mph_a_kmh(datos_raw.get('windgustmph')),
-            direccion_viento=datos_raw.get('winddir'),
+            direccion_viento=a_entero(datos_raw.get('winddir')),
             lluvia_hora=pulgadas_a_mm(datos_raw.get('rainratein')),
             lluvia_dia=pulgadas_a_mm(datos_raw.get('dailyrainin')),
             lluvia_evento=pulgadas_a_mm(datos_raw.get('eventrainin')),
             presion_absoluta=inhg_a_hpa(datos_raw.get('baromabsin')),
             presion_relativa=inhg_a_hpa(datos_raw.get('baromrelin')) or absoluta_a_relativa(inhg_a_hpa(datos_raw.get('baromabsin'))),
-            uv_index=datos_raw.get('uv'),
+            uv_index=a_entero(datos_raw.get('uv')),
             radiacion_solar=radiacion_solar,
             punto_rocio=fahrenheit_a_celsius(get_field(datos_raw, 'dewptf', 'dewpoint')),
             sensacion_termica=sensacion_calibrada,
