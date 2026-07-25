@@ -177,6 +177,104 @@ function updateFavicon(iconSrc) {
   if (link && link.href !== location.origin + iconSrc) link.href = iconSrc;
 }
 
+// ─── SONIDOS DEL CLIMA (sintetizados, sin archivos externos) ──
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function ruidoBlanco(duracion, volumen, frecuenciaFiltro) {
+  const ctx = getAudioCtx();
+  const bufferSize = Math.floor(ctx.sampleRate * duracion);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = frecuenciaFiltro || 1200;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(volumen, ctx.currentTime);
+  gain.gain.linearRampToValueAtTime(0, ctx.currentTime + duracion);
+  src.connect(filter).connect(gain).connect(ctx.destination);
+  src.start();
+}
+
+function tono(freq, duracion, tipo, volumen, delay) {
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = tipo || 'sine';
+  osc.frequency.value = freq;
+  const t0 = ctx.currentTime + (delay || 0);
+  gain.gain.setValueAtTime(0, t0);
+  gain.gain.linearRampToValueAtTime(volumen, t0 + 0.05);
+  gain.gain.linearRampToValueAtTime(0, t0 + duracion);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t0);
+  osc.stop(t0 + duracion + 0.05);
+}
+
+function sonidoLluvia()   { ruidoBlanco(2.0, 0.10, 1500); }
+function sonidoTormenta() { tono(55, 1.4, 'sawtooth', 0.12, 0); ruidoBlanco(1.8, 0.09, 1200); }
+function sonidoSoleado()  { tono(523, 0.25, 'sine', 0.09, 0); tono(659, 0.25, 'sine', 0.09, 0.15); tono(784, 0.4, 'sine', 0.1, 0.3); }
+function sonidoNoche()    { tono(392, 0.6, 'sine', 0.06, 0); tono(523, 0.9, 'sine', 0.05, 0.35); }
+function sonidoNublado()  { ruidoBlanco(1.2, 0.04, 600); tono(300, 0.8, 'sine', 0.05, 0.2); }
+
+function reproducirSonidoClima(fx, esTormenta) {
+  try {
+    if (esTormenta) return sonidoTormenta();
+    if (fx === 'rainy')  return sonidoLluvia();
+    if (fx === 'night')  return sonidoNoche();
+    if (fx === 'cloudy') return sonidoNublado();
+    return sonidoSoleado();
+  } catch { /* Web Audio no disponible, se ignora silenciosamente */ }
+}
+
+let sonidoInicialPendiente = true;
+function intentarSonidoInicial(fx, esTormenta) {
+  if (!sonidoInicialPendiente) return;
+  sonidoInicialPendiente = false;
+  setTimeout(() => {
+    try {
+      reproducirSonidoClima(fx, esTormenta);
+    } catch {
+      // Autoplay bloqueado por el navegador: reproducir en la primera interacción
+      const reintentar = () => { reproducirSonidoClima(fx, esTormenta); document.removeEventListener('click', reintentar); };
+      document.addEventListener('click', reintentar, { once: true });
+    }
+  }, 1000);
+}
+
+// ─── NOTIFICACIONES DEL NAVEGADOR PARA ALERTAS ────────────────
+const alertasNotificadas = new Set();
+function notificarAlertasNuevas(alertas) {
+  if (!('Notification' in window)) return;
+  const nuevas = alertas.filter(a => !alertasNotificadas.has(a.texto));
+  if (!nuevas.length) return;
+
+  const mostrar = () => {
+    nuevas.forEach(a => {
+      alertasNotificadas.add(a.texto);
+      try {
+        new Notification('Sistema Clima - Finca Lagunitas', {
+          body: `${a.icono} ${a.texto}`,
+          icon: '/static/icon-192.png',
+        });
+      } catch { /* algunos navegadores moviles no soportan Notification en pagina */ }
+    });
+  };
+
+  if (Notification.permission === 'granted') {
+    mostrar();
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission().then(p => { if (p === 'granted') mostrar(); });
+  }
+}
+
 // ─── ALERTAS DE CLIMA (útiles para la finca) ──────────────────
 const UMBRAL_HELADA = 5;      // °C
 const UMBRAL_LLUVIA = 10;     // mm/h
@@ -204,17 +302,21 @@ function updateAlerts(data) {
   if (!alertas.length) {
     banner.style.display = 'none';
     banner.innerHTML = '';
-    return;
+    return alertas;
   }
   banner.style.display = 'flex';
   banner.innerHTML = alertas.map(a =>
     `<div class="gw-alert ${a.clase}">${a.icono} ${a.texto}</div>`
   ).join('');
+  notificarAlertasNuevas(alertas);
+  return alertas;
 }
 
 function renderRealTime(data) {
-  updateAlerts(data);
+  const alertas = updateAlerts(data);
   const cond = getCondition(data);
+  const esTormenta = alertas.some(a => a.clase === 'lluvia' || a.clase === 'viento');
+  intentarSonidoInicial(cond.fx, esTormenta);
   const tempC = parseFloat(data.temp_exterior);
 
   els.temp.textContent      = Math.round(tempUnit === 'F' ? convertTemp(tempC) : tempC);
