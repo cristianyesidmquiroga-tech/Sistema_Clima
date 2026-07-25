@@ -421,6 +421,8 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   margin-bottom: 16px;
+  position: relative;
+  z-index: 5;
 }
 .gw-extra-card {
   text-align: center;
