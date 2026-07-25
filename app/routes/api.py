@@ -7,7 +7,7 @@ from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango,
-    obtener_rafaga_maxima_reciente
+    obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente
 )
 from datetime import datetime
 
@@ -119,6 +119,9 @@ def api_actual():
         rafaga_reciente = obtener_rafaga_maxima_reciente(15)
         if rafaga_reciente is not None:
             datos["rafaga_viento"] = max(rafaga_reciente, datos.get("rafaga_viento") or 0)
+        velocidad_reciente = obtener_velocidad_viento_promedio_reciente(15)
+        if velocidad_reciente is not None:
+            datos["velocidad_viento"] = round(velocidad_reciente, 1)
 
     return jsonify(datos)
 

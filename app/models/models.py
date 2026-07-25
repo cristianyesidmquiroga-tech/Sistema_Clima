@@ -1,3 +1,4 @@
+import math
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
 from datetime import datetime, timedelta
@@ -153,6 +154,32 @@ def a_entero(valor):
         return None
 
 
+def _presion_vapor_saturado(temp_c):
+    """Formula de Magnus-Tetens (hPa)."""
+    return 6.1094 * math.exp(17.625 * temp_c / (temp_c + 243.04))
+
+
+def corregir_humedad_por_temp(humedad_raw, temp_raw, temp_corregida):
+    """El sensor de humedad esta en la misma carcasa que se recalienta con
+    el sol, por lo que su lectura de humedad relativa sale mas baja de lo
+    real (mismo vapor de agua, pero a una temperatura mas alta). Se recalcula
+    la humedad relativa que corresponde al vapor de agua medido, evaluado a
+    la temperatura ya corregida por aplicar_compensacion_termica."""
+    if humedad_raw is None or temp_raw is None or temp_corregida is None:
+        return humedad_raw
+    try:
+        h = float(humedad_raw)
+        t_raw = float(temp_raw)
+        t_corr = float(temp_corregida)
+        if t_raw == t_corr:
+            return round(h, 1)
+        vapor = (h / 100.0) * _presion_vapor_saturado(t_raw)
+        h_corr = (vapor / _presion_vapor_saturado(t_corr)) * 100.0
+        return round(max(0.0, min(100.0, h_corr)), 1)
+    except Exception:
+        return humedad_raw
+
+
 def get_field(datos, *nombres):
     for nombre in nombres:
         valor = datos.get(nombre)
@@ -176,14 +203,15 @@ def guardar_lectura(datos_raw):
         sensacion_raw = fahrenheit_a_celsius(get_field(datos_raw, 'feelslikef', 'feelslike'))
         
         temp_ext_calibrada = aplicar_compensacion_termica(temp_ext_raw, radiacion_solar, viento_vel)
-        
+
         offset_aplicado = (temp_ext_raw - temp_ext_calibrada) if (temp_ext_raw and temp_ext_calibrada) else 0
         sensacion_calibrada = round(sensacion_raw - offset_aplicado, 1) if sensacion_raw else None
-        
+        humedad_calibrada = corregir_humedad_por_temp(datos_raw.get('humidity'), temp_ext_raw, temp_ext_calibrada)
+
         nueva_lectura = Lectura(
             temp_exterior=temp_ext_calibrada,
             temp_interior=fahrenheit_a_celsius(get_field(datos_raw, 'tempinf', 'indoortempf')),
-            humedad_exterior=datos_raw.get('humidity'),
+            humedad_exterior=humedad_calibrada,
             humedad_interior=get_field(datos_raw, 'humidityin', 'indoorhumidity'),
             velocidad_viento=viento_vel,
             rafaga_viento=mph_a_kmh(datos_raw.get('windgustmph')),
@@ -290,6 +318,14 @@ def obtener_rafaga_maxima_reciente(minutos=15):
     picos de viento breves que ocurren entre un reporte y otro."""
     limite = datetime.utcnow() - timedelta(minutes=minutos)
     return db.session.query(func.max(Lectura.rafaga_viento)).filter(Lectura.timestamp >= limite).scalar()
+
+
+def obtener_velocidad_viento_promedio_reciente(minutos=15):
+    """Promedio de viento sostenido de los ultimos N minutos. El anemometro
+    tiene un umbral minimo de arranque y marca 0 seguido aunque haya brisa,
+    el promedio reciente representa mejor el viento real que el instante."""
+    limite = datetime.utcnow() - timedelta(minutes=minutos)
+    return db.session.query(func.avg(Lectura.velocidad_viento)).filter(Lectura.timestamp >= limite).scalar()
 
 
 def obtener_lecturas_rango(dias=7):
