@@ -276,6 +276,13 @@ def obtener_stats_agrupadas():
     }
 
 
+def obtener_rafaga_maxima_reciente(minutos=15):
+    """Rafaga mas fuerte detectada en los ultimos N minutos, para no perder
+    picos de viento breves que ocurren entre un reporte y otro."""
+    limite = datetime.utcnow() - timedelta(minutes=minutos)
+    return db.session.query(func.max(Lectura.rafaga_viento)).filter(Lectura.timestamp >= limite).scalar()
+
+
 def obtener_lecturas_rango(dias=7):
     limite = datetime.utcnow() - timedelta(days=dias)
     lecturas = Lectura.query.filter(Lectura.timestamp >= limite).order_by(Lectura.timestamp.asc()).all()
