@@ -422,7 +422,7 @@ body {
   gap: 10px;
   margin-bottom: 16px;
   position: relative;
-  z-index: 5;
+  z-index: 5 !important;
 }
 .gw-extra-card {
   text-align: center;
