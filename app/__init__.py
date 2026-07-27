@@ -88,7 +88,7 @@ def create_app():
             "script-src 'self' 'unsafe-inline' https://unpkg.com; "
             "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tilecache.rainviewer.com; "
+            "img-src 'self' data: https://server.arcgisonline.com https://tilecache.rainviewer.com; "
             "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com"
         )
         return response
