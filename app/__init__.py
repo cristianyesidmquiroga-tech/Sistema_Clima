@@ -68,7 +68,15 @@ def create_app():
     with app.app_context():
         from app.routes import api
         app.register_blueprint(api.bp)
-        db.create_all()
+        try:
+            db.create_all()
+        except Exception as e:
+            # Si dos procesos arrancan a la vez (deploys con solapamiento,
+            # por ejemplo) puede haber una condicion de carrera creando
+            # una tabla nueva por primera vez. No es motivo para tumbar
+            # la app: la tabla igual queda creada por el otro proceso.
+            print(f"[DB] Aviso creando tablas (probable carrera entre workers): {e}")
+            db.session.rollback()
 
     @app.after_request
     def set_security_headers(response):
