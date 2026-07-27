@@ -870,9 +870,15 @@ const RAIN_COLORS = {
   muy_alto:   '#e53935',
 };
 
+// Mapa hecho con ArcGIS API for JavaScript 3.28 (la misma libreria que
+// usa SAB/IDIGER), con OpenStreetMapLayer como mapa base, para que se
+// vea igual que la referencia. Es mas pesada que Leaflet a proposito,
+// decision tomada sabiendo que la pagina carga un poco mas lento.
 let rainMap = null;
-let rainMarkers = [];
-let rainHeatLayer = null;
+let esriMods = null;   // referencias a las clases de ArcGIS ya cargadas
+let markersLayer = null;
+let heatLayer = null;
+let radarLayer = null;
 
 // Techo de intensidad para el heatmap: a partir de esta lluvia (mm) se
 // muestra el color mas fuerte de la escala. Es una interpolacion entre
@@ -882,95 +888,119 @@ const HEATMAP_MM_MAX = 50;
 
 function initRainMap() {
   const mapEl = document.getElementById('gwRainMap');
-  if (!mapEl || typeof L === 'undefined') return;
-  rainMap = L.map('gwRainMap', { scrollWheelZoom: false }).setView([5.96, -73.68], 11);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles &copy; Esri',
-    maxZoom: 19,
-  }).addTo(rainMap);
+  if (!mapEl || typeof require === 'undefined') return;
 
-  loadRadarLayer();
-  const toggle = document.getElementById('gwRadarToggle');
-  if (toggle) {
-    toggle.addEventListener('change', () => {
-      if (!radarLayer) return;
-      if (toggle.checked) radarLayer.addTo(rainMap);
-      else rainMap.removeLayer(radarLayer);
+  require([
+    "esri/map", "esri/layers/OpenStreetMapLayer", "esri/layers/GraphicsLayer",
+    "esri/layers/WebTiledLayer", "esri/graphic", "esri/geometry/Point",
+    "esri/SpatialReference", "esri/symbols/SimpleMarkerSymbol",
+    "esri/symbols/SimpleLineSymbol", "esri/renderers/HeatmapRenderer",
+    "esri/InfoTemplate", "esri/Color", "dojo/domReady!"
+  ], function (Map, OpenStreetMapLayer, GraphicsLayer, WebTiledLayer, Graphic,
+               Point, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol,
+               HeatmapRenderer, InfoTemplate, Color) {
+    esriMods = { Graphic, Point, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol, HeatmapRenderer, InfoTemplate, Color };
+
+    rainMap = new Map("gwRainMap", {
+      center: [-73.68, 5.96],  // ArcGIS usa [lon, lat], al reves que Leaflet
+      zoom: 11,
+      maxZoom: 12,  // limite prudente: RainViewer solo tiene tiles reales hasta zoom 7-8
+      logo: false,
     });
-  }
+    rainMap.addLayer(new OpenStreetMapLayer());
+
+    markersLayer = new GraphicsLayer();
+    markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "${id}<br>Lluvia hoy: ${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
+    markersLayer.on("click", function (evt) {
+      const attrs = evt.graphic.attributes;
+      if (attrs && attrs.stationId) openStationModal(attrs.stationId, attrs.nombre);
+    });
+
+    heatLayer = new GraphicsLayer();
+
+    rainMap.on("load", function () {
+      rainMap.addLayer(heatLayer);
+      rainMap.addLayer(markersLayer);
+      loadRadarLayer();
+      fetchMapaLluvias();
+    });
+
+    const toggle = document.getElementById('gwRadarToggle');
+    if (toggle) {
+      toggle.addEventListener('change', () => {
+        if (!radarLayer) return;
+        radarLayer.setVisibility(toggle.checked);
+      });
+    }
+  });
 }
 
 // ─── RADAR REAL (RainViewer, gratis para uso personal/educativo) ──
-let radarLayer = null;
-
 async function loadRadarLayer() {
+  if (!esriMods) return;
   try {
     const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
     const data = await res.json();
     const frames = data.radar && data.radar.past;
     if (!frames || !frames.length) return;
     const ultimo = frames[frames.length - 1];
-    const tileUrl = `${data.host}${ultimo.path}/256/{z}/{x}/{y}/2/1_1.png`;
-    radarLayer = L.tileLayer(tileUrl, {
-      opacity: 0.6,
-      attribution: 'Radar: RainViewer',
-      maxNativeZoom: 7,  // RainViewer solo tiene tiles hasta zoom 7; sin esto, en zooms mas altos aparece "Zoom Level Not Supported"
-      minZoom: 0,
-    });
+    const tileUrl = `${data.host}${ultimo.path}/256/\${level}/\${col}/\${row}/2/1_1.png`;
     const toggle = document.getElementById('gwRadarToggle');
-    if (!toggle || toggle.checked) radarLayer.addTo(rainMap);
+    require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
+      radarLayer = new WebTiledLayer(tileUrl, { id: "radar", opacity: 0.6 });
+      rainMap.addLayer(radarLayer);
+      if (toggle) radarLayer.setVisibility(toggle.checked);
+    });
   } catch (e) {
     console.error('Error cargando radar RainViewer', e);
   }
 }
 
-function triangleIcon(color, parpadea) {
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="24" viewBox="0 0 26 24">
-    <polygon points="13,1 25,22 1,22" fill="${color}" stroke="#1c1e22" stroke-width="1.5"/>
-  </svg>`;
-  return L.divIcon({
-    html: svg,
-    className: parpadea ? 'gw-marker-parpadeo' : '',
-    iconSize: [26, 24], iconAnchor: [13, 20], popupAnchor: [0, -18],
-  });
+function crearSimboloTriangulo(color) {
+  const { SimpleMarkerSymbol, SimpleLineSymbol, Color } = esriMods;
+  return new SimpleMarkerSymbol(
+    SimpleMarkerSymbol.STYLE_TRIANGLE, 16,
+    new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color('#1c1e22'), 1.5),
+    new Color(color)
+  );
 }
 
 async function fetchMapaLluvias() {
-  if (!rainMap) return;
+  if (!rainMap || !markersLayer || !esriMods) return;
   try {
     const res = await fetch('/api/mapa_lluvias');
     const data = await res.json();
 
-    rainMarkers.forEach(m => rainMap.removeLayer(m));
-    rainMarkers = [];
-    if (rainHeatLayer) { rainMap.removeLayer(rainHeatLayer); rainHeatLayer = null; }
+    const { Graphic, Point, SpatialReference, HeatmapRenderer } = esriMods;
+    markersLayer.clear();
+    heatLayer.clear();
 
-    const heatPoints = [];
+    const wgs84 = new SpatialReference({ wkid: 4326 });
+    const heatGraphics = [];
 
     data.forEach(est => {
       if (est.lat == null || est.lon == null) return;
       const color = RAIN_COLORS[est.nivel] || RAIN_COLORS.sin_dato;
-      const estaLloviendo = est.lluvia_mm > 0;
-      const marker = L.marker([est.lat, est.lon], { icon: triangleIcon(color, estaLloviendo) }).addTo(rainMap);
+      const punto = new Point(est.lon, est.lat, wgs84);
       const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
-      marker.bindPopup(`<strong>${est.nombre}</strong><br>${est.id}<br>Lluvia hoy: ${mmTxt}${est.temp != null ? `<br>Temp: ${est.temp}°C` : ''}<br><em>Click en el triángulo para ver el historial</em>`);
-      marker.on('click', () => openStationModal(est.id, est.nombre));
-      rainMarkers.push(marker);
+      const tempTxt = est.temp != null ? `Temp: ${est.temp}°C` : '';
+      const graphic = new Graphic(punto, crearSimboloTriangulo(color), {
+        stationId: est.id, nombre: est.nombre, id: est.id, lluviaTxt: mmTxt, tempTxt: tempTxt,
+      });
+      markersLayer.add(graphic);
 
       if (est.lluvia_mm > 0) {
-        const intensidad = Math.min(est.lluvia_mm, HEATMAP_MM_MAX) / HEATMAP_MM_MAX;
-        heatPoints.push([est.lat, est.lon, intensidad]);
+        const intensidad = Math.min(est.lluvia_mm, HEATMAP_MM_MAX);
+        const gHeat = new Graphic(punto, null, { lluvia: intensidad });
+        heatGraphics.push(gHeat);
       }
     });
 
-    if (heatPoints.length && typeof L.heatLayer === 'function') {
-      rainHeatLayer = L.heatLayer(heatPoints, {
-        radius: 70,
-        blur: 45,
-        maxZoom: 12,
-        max: 1,
-        gradient: { 0.1: '#4fc3f7', 0.4: '#66bb6a', 0.7: '#ffa726', 1.0: '#e53935' },
-      }).addTo(rainMap);
+    if (heatGraphics.length) {
+      heatLayer.setRenderer(new HeatmapRenderer({
+        field: 'lluvia', blurRadius: 25, maxPixelIntensity: HEATMAP_MM_MAX, minPixelIntensity: 0,
+      }));
+      heatGraphics.forEach(g => heatLayer.add(g));
     }
 
     actualizarPromedioRegional(data);

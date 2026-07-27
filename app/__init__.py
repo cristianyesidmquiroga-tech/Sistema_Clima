@@ -85,11 +85,14 @@ def create_app():
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline' https://unpkg.com; "
-            "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
-            "img-src 'self' data: https://server.arcgisonline.com https://tilecache.rainviewer.com; "
-            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com"
+            # 'unsafe-eval' es necesario porque el cargador de modulos Dojo
+            # (usado internamente por la ArcGIS API for JavaScript 3.x) lo
+            # requiere para funcionar; sin esto el mapa no carga.
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com; "
+            "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com https://js.arcgis.com; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com; "
+            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com"
         )
         return response
 
