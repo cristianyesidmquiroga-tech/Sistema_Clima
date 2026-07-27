@@ -28,12 +28,12 @@ FINCA_LON = -73.63
 # la API de lectura de WU permite consultar cualquier estacion publica
 # con una sola API Key.
 ESTACIONES_MAPA_LLUVIAS = [
-    {"id": "IGUAVA3",  "nombre": "Agrosavia (nuestra)"},
-    {"id": "IBARBO1",  "nombre": "Godofredo Mateus"},
-    {"id": "IBARBO2",  "nombre": "Marcos Santamaria"},
-    {"id": "IVLEZ2",   "nombre": "David Vargas"},
-    {"id": "IVLEZ7",   "nombre": "Eduar Andrey"},
-    {"id": "IPUENT49", "nombre": "Javier Cifuentes"},
+    {"id": "IGUAVA3",  "nombre": "Guavatá (nuestra)"},
+    {"id": "IBARBO1",  "nombre": "Barbosa 1"},
+    {"id": "IBARBO2",  "nombre": "Barbosa 2"},
+    {"id": "IVLEZ2",   "nombre": "Vélez 1"},
+    {"id": "IVLEZ7",   "nombre": "Vélez 2"},
+    {"id": "IPUENT49", "nombre": "Puente Nacional"},
 ]
 
 CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos, cacheado en Redis via @cache.cached

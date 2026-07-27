@@ -912,7 +912,7 @@ function initRainMap() {
     cargarLimitesMunicipios();
 
     markersLayer = new GraphicsLayer();
-    markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "${id}<br>Lluvia hoy: ${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
+    markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "Lluvia hoy: ${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
     markersLayer.on("click", function (evt) {
       const attrs = evt.graphic.attributes;
       if (attrs && attrs.stationId) openStationModal(attrs.stationId, attrs.nombre);
@@ -1099,7 +1099,7 @@ async function openStationModal(stationId, nombre) {
   const modal = document.getElementById('gwStationModal');
   const titulo = document.getElementById('gwStationModalTitle');
   if (!modal || !titulo) return;
-  titulo.textContent = `${nombre} (${stationId}) — últimas 24h`;
+  titulo.textContent = `${nombre} — últimas 24h`;
   modal.classList.add('show');
 
   try {
