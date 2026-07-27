@@ -918,12 +918,18 @@ function initRainMap() {
 
     heatLayer = new GraphicsLayer();
 
-    rainMap.on("load", function () {
+    function alMapaListo() {
       rainMap.addLayer(heatLayer);
       rainMap.addLayer(markersLayer);
       loadRadarLayer();
       fetchMapaLluvias();
-    });
+    }
+    // El mapa puede terminar de cargar antes de que lleguemos a
+    // "escuchar" el evento (sobre todo con el basemap en cache), asi
+    // que si ya esta listo lo llamamos directo en vez de esperar un
+    // evento que ya paso.
+    if (rainMap.loaded) alMapaListo();
+    else rainMap.on("load", alMapaListo);
 
     const toggle = document.getElementById('gwRadarToggle');
     if (toggle) {
