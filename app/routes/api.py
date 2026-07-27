@@ -4,7 +4,7 @@ import hmac
 import requests
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
-from app import limiter
+from app import limiter, cache
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
@@ -36,8 +36,7 @@ ESTACIONES_MAPA_LLUVIAS = [
     {"id": "IPUENT49", "nombre": "Javier Cifuentes"},
 ]
 
-_CACHE_MAPA_LLUVIAS = {"ts": 0, "datos": []}
-CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos
+CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos, cacheado en Redis via @cache.cached
 
 
 def _nivel_lluvia(mm):
@@ -174,6 +173,7 @@ def api_actual():
 
 @bp.route('/api/historial')
 @limiter.limit("150 per hour")
+@cache.cached(timeout=60, query_string=True)
 def api_historial():
     horas = request.args.get('horas', 24, type=int)
     horas = max(1, min(horas, 24 * 30))
@@ -182,11 +182,13 @@ def api_historial():
 
 @bp.route('/api/stats')
 @limiter.limit("150 per hour")
+@cache.cached(timeout=60)
 def api_stats():
     return jsonify(obtener_stats_dia())
 
 @bp.route('/api/stats/comparative')
 @limiter.limit("150 per hour")
+@cache.cached(timeout=300)
 def api_stats_comparative():
     stats = obtener_stats_agrupadas()
     
@@ -249,12 +251,8 @@ def dashboard():
 
 @bp.route('/api/mapa_lluvias')
 @limiter.limit("60 per hour")
+@cache.cached(timeout=CACHE_MAPA_LLUVIAS_TTL)
 def api_mapa_lluvias():
-    import time
-    ahora = time.time()
-    if ahora - _CACHE_MAPA_LLUVIAS["ts"] < CACHE_MAPA_LLUVIAS_TTL and _CACHE_MAPA_LLUVIAS["datos"]:
-        return jsonify(_CACHE_MAPA_LLUVIAS["datos"])
-
     if not WU_API_KEY:
         return jsonify([])
 
@@ -281,12 +279,11 @@ def api_mapa_lluvias():
         except Exception as e:
             print(f"[MapaLluvias] Error consultando {est['id']}: {e}")
 
-    _CACHE_MAPA_LLUVIAS["ts"] = ahora
-    _CACHE_MAPA_LLUVIAS["datos"] = resultado
     return jsonify(resultado)
 
 @bp.route('/api/estacion/<station_id>/historial')
 @limiter.limit("80 per hour")
+@cache.cached(timeout=180, query_string=True)
 def api_estacion_historial(station_id):
     ids_validos = {e["id"] for e in ESTACIONES_MAPA_LLUVIAS}
     if station_id not in ids_validos:
@@ -301,6 +298,7 @@ def api_estacion_historial(station_id):
 
 @bp.route('/api/analisis')
 @limiter.limit("80 per hour")
+@cache.cached(timeout=300, query_string=True)
 def api_analisis():
     tipo = request.args.get('tipo', 'dias')
     if tipo not in ('dias', 'semanas', 'meses', 'años', 'anos'):

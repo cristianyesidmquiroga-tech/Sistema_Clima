@@ -19,6 +19,19 @@ services:
     mem_limit: 512m
     cpus: 1.0
 
+  redis:
+    image: redis:7-alpine
+    container_name: clima_redis
+    restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    mem_limit: 160m
+    cpus: 0.25
+
   app:
     build: .
     container_name: clima_app
@@ -29,6 +42,7 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
+      REDIS_URL: redis://redis:6379/0
       STATION_PASSKEY: ${STATION_PASSKEY:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       ENABLE_TEST_ENDPOINT: ${ENABLE_TEST_ENDPOINT:-false}
@@ -47,6 +61,8 @@ services:
       - "8082:8080"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     mem_limit: 512m
     cpus: 1.0

@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_caching import Cache
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.models.models import db
 from app.security import limite_dinamico_por_pais, alertar_limite_excedido
@@ -23,6 +24,8 @@ limiter = Limiter(
     on_breach=_en_ruptura_de_limite,
 )
 
+cache = Cache()
+
 
 def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
@@ -30,6 +33,18 @@ def create_app():
     # para que request.remote_addr sea la IP real del visitante, no la
     # IP interna del proxy.
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
+
+    # Redis: le da al rate-limiter un contador compartido entre los 2
+    # workers de gunicorn (antes cada uno contaba por separado, con
+    # memoria propia) y sirve de cache para las consultas mas pesadas.
+    # Si no esta configurado (ej. entorno local sin Redis), cae a
+    # almacenamiento en memoria para que la app igual funcione.
+    redis_url = os.environ.get('REDIS_URL', '')
+    if redis_url:
+        app.config['RATELIMIT_STORAGE_URI'] = redis_url
+        cache.init_app(app, config={'CACHE_TYPE': 'RedisCache', 'CACHE_REDIS_URL': redis_url, 'CACHE_DEFAULT_TIMEOUT': 300})
+    else:
+        cache.init_app(app, config={'CACHE_TYPE': 'SimpleCache', 'CACHE_DEFAULT_TIMEOUT': 300})
     limiter.init_app(app)
 
     @app.errorhandler(429)
