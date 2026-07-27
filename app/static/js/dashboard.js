@@ -842,14 +842,229 @@ document.addEventListener('click', () => {
   document.querySelectorAll('.gw-info-popover.show').forEach(p => p.classList.remove('show'));
 });
 
+// ─── MAPA DE LLUVIAS (Region Guayaba, Bocadillo) ──────────────
+const RAIN_COLORS = {
+  sin_dato:   '#888888',
+  sin_lluvia: '#bdbdbd',
+  bajo:       '#4fc3f7',
+  moderado:   '#66bb6a',
+  alto:       '#ffa726',
+  muy_alto:   '#e53935',
+};
+
+let rainMap = null;
+let rainMarkers = [];
+let rainHeatLayer = null;
+
+// Techo de intensidad para el heatmap: a partir de esta lluvia (mm) se
+// muestra el color mas fuerte de la escala. Es una interpolacion entre
+// las 6 estaciones, no radar real, asi que solo busca dar una idea
+// aproximada de donde llovio mas fuerte, no la forma exacta de la lluvia.
+const HEATMAP_MM_MAX = 50;
+
+function initRainMap() {
+  const mapEl = document.getElementById('gwRainMap');
+  if (!mapEl || typeof L === 'undefined') return;
+  rainMap = L.map('gwRainMap', { scrollWheelZoom: false }).setView([5.96, -73.68], 11);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; OpenStreetMap &copy; CARTO',
+    maxZoom: 19,
+  }).addTo(rainMap);
+
+  loadRadarLayer();
+  const toggle = document.getElementById('gwRadarToggle');
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      if (!radarLayer) return;
+      if (toggle.checked) radarLayer.addTo(rainMap);
+      else rainMap.removeLayer(radarLayer);
+    });
+  }
+}
+
+// ─── RADAR REAL (RainViewer, gratis para uso personal/educativo) ──
+let radarLayer = null;
+
+async function loadRadarLayer() {
+  try {
+    const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+    const data = await res.json();
+    const frames = data.radar && data.radar.past;
+    if (!frames || !frames.length) return;
+    const ultimo = frames[frames.length - 1];
+    const tileUrl = `${data.host}${ultimo.path}/256/{z}/{x}/{y}/2/1_1.png`;
+    radarLayer = L.tileLayer(tileUrl, {
+      opacity: 0.6,
+      attribution: 'Radar: RainViewer',
+    });
+    const toggle = document.getElementById('gwRadarToggle');
+    if (!toggle || toggle.checked) radarLayer.addTo(rainMap);
+  } catch (e) {
+    console.error('Error cargando radar RainViewer', e);
+  }
+}
+
+function triangleIcon(color) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="24" viewBox="0 0 26 24">
+    <polygon points="13,1 25,22 1,22" fill="${color}" stroke="#1c1e22" stroke-width="1.5"/>
+  </svg>`;
+  return L.divIcon({
+    html: svg, className: '', iconSize: [26, 24], iconAnchor: [13, 20], popupAnchor: [0, -18],
+  });
+}
+
+async function fetchMapaLluvias() {
+  if (!rainMap) return;
+  try {
+    const res = await fetch('/api/mapa_lluvias');
+    const data = await res.json();
+
+    rainMarkers.forEach(m => rainMap.removeLayer(m));
+    rainMarkers = [];
+    if (rainHeatLayer) { rainMap.removeLayer(rainHeatLayer); rainHeatLayer = null; }
+
+    const heatPoints = [];
+
+    data.forEach(est => {
+      if (est.lat == null || est.lon == null) return;
+      const color = RAIN_COLORS[est.nivel] || RAIN_COLORS.sin_dato;
+      const marker = L.marker([est.lat, est.lon], { icon: triangleIcon(color) }).addTo(rainMap);
+      const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
+      marker.bindPopup(`<strong>${est.nombre}</strong><br>${est.id}<br>Lluvia hoy: ${mmTxt}${est.temp != null ? `<br>Temp: ${est.temp}°C` : ''}<br><em>Click en el triángulo para ver el historial</em>`);
+      marker.on('click', () => openStationModal(est.id, est.nombre));
+      rainMarkers.push(marker);
+
+      if (est.lluvia_mm > 0) {
+        const intensidad = Math.min(est.lluvia_mm, HEATMAP_MM_MAX) / HEATMAP_MM_MAX;
+        heatPoints.push([est.lat, est.lon, intensidad]);
+      }
+    });
+
+    if (heatPoints.length && typeof L.heatLayer === 'function') {
+      rainHeatLayer = L.heatLayer(heatPoints, {
+        radius: 70,
+        blur: 45,
+        maxZoom: 12,
+        max: 1,
+        gradient: { 0.1: '#4fc3f7', 0.4: '#66bb6a', 0.7: '#ffa726', 1.0: '#e53935' },
+      }).addTo(rainMap);
+    }
+  } catch (e) {
+    console.error('Error cargando mapa de lluvias', e);
+  }
+}
+
+// ─── MODAL DE DETALLE POR ESTACION ────────────────────────────
+let stationCharts = {};
+
+function destruirStationCharts() {
+  Object.values(stationCharts).forEach(c => c && c.destroy());
+  stationCharts = {};
+}
+
+async function openStationModal(stationId, nombre) {
+  const modal = document.getElementById('gwStationModal');
+  const titulo = document.getElementById('gwStationModalTitle');
+  if (!modal || !titulo) return;
+  titulo.textContent = `${nombre} (${stationId}) — últimas 24h`;
+  modal.classList.add('show');
+
+  try {
+    const res = await fetch(`/api/estacion/${stationId}/historial?dias=1`);
+    const data = await res.json();
+    renderStationCharts(data);
+  } catch (e) {
+    console.error('Error cargando historial de estacion', e);
+  }
+}
+
+function closeStationModal() {
+  const modal = document.getElementById('gwStationModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function renderStationCharts(data) {
+  destruirStationCharts();
+  if (!data.length) return;
+
+  const textColor = getChartTextColor ? getChartTextColor() : 'rgba(255,255,255,0.9)';
+  const labels = data.map(d => {
+    const t = new Date(d.timestamp);
+    return t.getHours().toString().padStart(2, '0') + ':00';
+  });
+
+  const baseOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { labels: { color: textColor, font: { size: 10 }, boxWidth: 10 } } },
+    scales: {
+      x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } },
+      y: { ticks: { color: textColor, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+    },
+  };
+
+  stationCharts.temp = new Chart(document.getElementById('gwStChartTemp').getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Temp °C', data: data.map(d => d.temp_avg), borderColor: '#fbbc04', backgroundColor: 'rgba(251,188,4,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+      { label: 'Punto de Rocío °C', data: data.map(d => d.dewpt_avg), borderColor: '#66bb6a', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 2 },
+    ]},
+    options: baseOpts,
+  });
+
+  stationCharts.wind = new Chart(document.getElementById('gwStChartWind').getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Viento km/h', data: data.map(d => d.viento_avg), borderColor: '#4fc3f7', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 2 },
+      { label: 'Ráfaga km/h', data: data.map(d => d.rafaga_max), borderColor: '#ffa726', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 1.5, borderDash: [4, 3] },
+    ]},
+    options: baseOpts,
+  });
+
+  stationCharts.rain = new Chart(document.getElementById('gwStChartRain').getContext('2d'), {
+    type: 'bar',
+    data: { labels, datasets: [
+      { label: 'Lluvia mm', data: data.map(d => d.lluvia_mm), backgroundColor: '#8ab4f8' },
+    ]},
+    options: baseOpts,
+  });
+
+  stationCharts.pressure = new Chart(document.getElementById('gwStChartPressure').getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Presión hPa (máx)', data: data.map(d => d.presion_max), borderColor: '#e0e0e0', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+    ]},
+    options: baseOpts,
+  });
+
+  stationCharts.solar = new Chart(document.getElementById('gwStChartSolar').getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [
+      { label: 'Radiación Solar W/m²', data: data.map(d => d.radiacion_solar_max), borderColor: '#ff8a65', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2, yAxisID: 'y' },
+      { label: 'UV', data: data.map(d => d.uv_max), borderColor: '#ce93d8', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2, yAxisID: 'y1' },
+    ]},
+    options: { ...baseOpts, scales: { ...baseOpts.scales,
+      y1: { position: 'right', ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } } } },
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('gwStationModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeStationModal);
+  const modal = document.getElementById('gwStationModal');
+  if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeStationModal(); });
+});
+
 // ─── ARRANQUE ─────────────────────────────────────────────────
 applyStoredPrefs();
 fetchRealTime();
 fetchHistory();
 fetchForecast();
 fetchAnalisisHistorico();
+initRainMap();
+fetchMapaLluvias();
 
 setInterval(fetchRealTime,                30_000);
 setInterval(fetchHistory,           5 * 60_000);
 setInterval(fetchForecast,         15 * 60_000);
 setInterval(fetchAnalisisHistorico, 10 * 60_000);
+setInterval(fetchMapaLluvias,        5 * 60_000);

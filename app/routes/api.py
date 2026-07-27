@@ -7,7 +7,8 @@ from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango,
-    obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente
+    obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente,
+    obtener_historial_estacion
 )
 from datetime import datetime
 
@@ -15,9 +16,51 @@ bp = Blueprint('api', __name__)
 
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
 ENABLE_TEST_ENDPOINT = os.environ.get('ENABLE_TEST_ENDPOINT', 'false').lower() == 'true'
+WU_API_KEY = os.environ.get('WU_API_KEY', '')
 
 FINCA_LAT = 5.96
 FINCA_LON = -73.63
+
+# Estaciones publicas de Wunderground para el mapa de lluvias de la region
+# (Guavata, Velez, Barbosa, Puente Nacional). No requieren ser propias:
+# la API de lectura de WU permite consultar cualquier estacion publica
+# con una sola API Key.
+ESTACIONES_MAPA_LLUVIAS = [
+    {"id": "IGUAVA3",  "nombre": "Agrosavia (nuestra)"},
+    {"id": "IBARBO1",  "nombre": "Godofredo Mateus"},
+    {"id": "IBARBO2",  "nombre": "Marcos Santamaria"},
+    {"id": "IVLEZ2",   "nombre": "David Vargas"},
+    {"id": "IVLEZ7",   "nombre": "Eduar Andrey"},
+    {"id": "IPUENT49", "nombre": "Javier Cifuentes"},
+]
+
+_CACHE_MAPA_LLUVIAS = {"ts": 0, "datos": []}
+CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos
+
+
+def _nivel_lluvia(mm):
+    if mm is None:
+        return "sin_dato"
+    if mm <= 0:
+        return "sin_lluvia"
+    if mm <= 10:
+        return "bajo"
+    if mm <= 30:
+        return "moderado"
+    if mm <= 50:
+        return "alto"
+    return "muy_alto"
+
+
+def _consultar_estacion_wu(station_id):
+    r = requests.get(
+        "https://api.weather.com/v2/pws/observations/current",
+        params={"stationId": station_id, "format": "json", "units": "m", "apiKey": WU_API_KEY},
+        timeout=8,
+    )
+    r.raise_for_status()
+    obs = (r.json().get("observations") or [None])[0]
+    return obs
 DATOS_DESACTUALIZADOS_MIN = 15
 
 
@@ -194,6 +237,51 @@ def api_test():
 @bp.route('/')
 def dashboard():
     return render_template('index.html')
+
+@bp.route('/api/mapa_lluvias')
+def api_mapa_lluvias():
+    import time
+    ahora = time.time()
+    if ahora - _CACHE_MAPA_LLUVIAS["ts"] < CACHE_MAPA_LLUVIAS_TTL and _CACHE_MAPA_LLUVIAS["datos"]:
+        return jsonify(_CACHE_MAPA_LLUVIAS["datos"])
+
+    if not WU_API_KEY:
+        return jsonify([])
+
+    resultado = []
+    for est in ESTACIONES_MAPA_LLUVIAS:
+        try:
+            obs = _consultar_estacion_wu(est["id"])
+            if not obs:
+                continue
+            metric = obs.get("metric", {})
+            lluvia_mm = metric.get("precipTotal")
+            resultado.append({
+                "id": est["id"],
+                "nombre": est["nombre"],
+                "lat": obs.get("lat"),
+                "lon": obs.get("lon"),
+                "lluvia_mm": lluvia_mm,
+                "nivel": _nivel_lluvia(lluvia_mm),
+                "temp": metric.get("temp"),
+                "obs_local": obs.get("obsTimeLocal"),
+            })
+        except Exception as e:
+            print(f"[MapaLluvias] Error consultando {est['id']}: {e}")
+
+    _CACHE_MAPA_LLUVIAS["ts"] = ahora
+    _CACHE_MAPA_LLUVIAS["datos"] = resultado
+    return jsonify(resultado)
+
+@bp.route('/api/estacion/<station_id>/historial')
+def api_estacion_historial(station_id):
+    ids_validos = {e["id"] for e in ESTACIONES_MAPA_LLUVIAS}
+    if station_id not in ids_validos:
+        return jsonify({"error": "Estacion desconocida"}), 404
+    dias = request.args.get('dias', 1, type=int)
+    dias = max(1, min(dias, 730))
+    datos = obtener_historial_estacion(station_id, dias)
+    return jsonify(datos)
 
 @bp.route('/api/analisis')
 def api_analisis():

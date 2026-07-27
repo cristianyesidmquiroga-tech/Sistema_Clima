@@ -13,7 +13,9 @@
   <meta name="apple-mobile-web-app-title" content="Clima Lagunitas">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=29">
+  <link rel="stylesheet" href="/static/css/style.css?v=32">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
 <body class="theme-dark">
 
@@ -202,6 +204,61 @@
       <div id="gwHistoryAnalysis" class="gw-history-analysis"></div>
     </section>
 
+    <div class="gw-divider"></div>
+
+    <section class="gw-rain-map-panel">
+      <div class="gw-history-header">
+        <h3 class="gw-history-title">🌧️ Lluvias en Tiempo Real — Región Guayaba, Bocadillo</h3>
+      </div>
+      <p class="gw-rain-map-note">Datos de estaciones cercanas (Wunderground), pueden tener hasta ~20 min de retraso. Las manchas de color son una estimación por interpolación entre estaciones, no una imagen de radar real.</p>
+      <label class="gw-radar-toggle">
+        <input type="checkbox" id="gwRadarToggle" checked>
+        Mostrar radar real (RainViewer)
+      </label>
+      <div class="gw-rain-map-wrap">
+        <div id="gwRainMap" class="gw-rain-map"></div>
+        <div class="gw-rain-legend">
+          <strong>Lluvia acumulada (hoy)</strong>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-sin_lluvia"></span> Sin lluvia (0 mm)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-bajo"></span> Bajo (0.1–10 mm)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-moderado"></span> Moderado (10.1–30 mm)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-alto"></span> Alto (30.1–50 mm)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-muy_alto"></span> Muy alto (&gt;50 mm)</div>
+        </div>
+      </div>
+    </section>
+
+    <div id="gwStationModal" class="gw-station-modal">
+      <div class="gw-station-modal-box">
+        <div class="gw-station-modal-header">
+          <h3 id="gwStationModalTitle">Estación</h3>
+          <button id="gwStationModalClose" class="gw-station-modal-close">✕</button>
+        </div>
+        <div class="gw-station-modal-body">
+          <div class="gw-station-chart-block">
+            <span class="gw-station-chart-title">Temperatura y Punto de Rocío</span>
+            <div class="gw-station-chart-container"><canvas id="gwStChartTemp"></canvas></div>
+          </div>
+          <div class="gw-station-chart-block">
+            <span class="gw-station-chart-title">Viento (velocidad y ráfaga)</span>
+            <div class="gw-station-chart-container"><canvas id="gwStChartWind"></canvas></div>
+          </div>
+          <div class="gw-station-chart-block">
+            <span class="gw-station-chart-title">Precipitación</span>
+            <div class="gw-station-chart-container"><canvas id="gwStChartRain"></canvas></div>
+          </div>
+          <div class="gw-station-chart-block">
+            <span class="gw-station-chart-title">Presión</span>
+            <div class="gw-station-chart-container"><canvas id="gwStChartPressure"></canvas></div>
+          </div>
+          <div class="gw-station-chart-block">
+            <span class="gw-station-chart-title">Radiación Solar y UV</span>
+            <div class="gw-station-chart-container"><canvas id="gwStChartSolar"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <footer class="gw-footer">
       <span id="gwStatusText">Estación: Conectando...</span>
     </footer>
@@ -211,6 +268,9 @@
   <script src="/static/lib/chart.min.js?v=29"></script>
   <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=29"></script>
   <script src="/static/js/weather-fx.js?v=29"></script>
-  <script src="/static/js/dashboard.js?v=32"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="/static/js/dashboard.js?v=36"></script>
 </body>
 </html>

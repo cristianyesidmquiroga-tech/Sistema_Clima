@@ -75,6 +75,108 @@ class Lectura(db.Model):
         }
 
 
+class HistorialEstacion(db.Model):
+    """
+    Historial por hora de estaciones publicas de Wunderground (no propias),
+    usado para el mapa de lluvias y los graficos de detalle por estacion.
+    Se llena con scripts/backfill_historial_wu.py y se consulta desde
+    /api/estacion/<id>/historial.
+    """
+    __tablename__ = 'historial_estaciones'
+    id = db.Column(db.Integer, primary_key=True)
+    station_id = db.Column(db.String(20), nullable=False, index=True)
+    timestamp = db.Column(db.DateTime, nullable=False, index=True)
+    temp_avg = db.Column(db.Float)
+    temp_max = db.Column(db.Float)
+    temp_min = db.Column(db.Float)
+    dewpt_avg = db.Column(db.Float)
+    humedad_avg = db.Column(db.Float)
+    humedad_max = db.Column(db.Float)
+    humedad_min = db.Column(db.Float)
+    viento_avg = db.Column(db.Float)
+    viento_max = db.Column(db.Float)
+    rafaga_max = db.Column(db.Float)
+    direccion_viento_avg = db.Column(db.Integer)
+    lluvia_mm = db.Column(db.Float)
+    lluvia_rate_max = db.Column(db.Float)
+    presion_max = db.Column(db.Float)
+    presion_min = db.Column(db.Float)
+    radiacion_solar_max = db.Column(db.Float)
+    uv_max = db.Column(db.Float)
+
+    __table_args__ = (
+        db.UniqueConstraint('station_id', 'timestamp', name='uq_estacion_timestamp'),
+    )
+
+    def to_dict(self):
+        return {
+            'timestamp': self.timestamp.isoformat() + "Z" if self.timestamp else None,
+            'temp_avg': self.temp_avg,
+            'temp_max': self.temp_max,
+            'temp_min': self.temp_min,
+            'dewpt_avg': self.dewpt_avg,
+            'humedad_avg': self.humedad_avg,
+            'humedad_max': self.humedad_max,
+            'humedad_min': self.humedad_min,
+            'viento_avg': self.viento_avg,
+            'viento_max': self.viento_max,
+            'rafaga_max': self.rafaga_max,
+            'direccion_viento_avg': self.direccion_viento_avg,
+            'lluvia_mm': self.lluvia_mm,
+            'lluvia_rate_max': self.lluvia_rate_max,
+            'presion_max': self.presion_max,
+            'presion_min': self.presion_min,
+            'radiacion_solar_max': self.radiacion_solar_max,
+            'uv_max': self.uv_max,
+        }
+
+
+def guardar_historial_estacion(station_id, obs):
+    """Guarda (o actualiza si ya existe) una observacion horaria de una
+    estacion externa de Wunderground. `obs` es el dict que devuelve la
+    API de WU en metric (temp, humidity, windspeed, etc en metric)."""
+    metric = obs.get('metric', {})
+    ts_str = obs.get('obsTimeUtc')
+    if not ts_str:
+        return False
+    ts = datetime.fromisoformat(ts_str.replace('Z', '+00:00')).replace(tzinfo=None)
+
+    existente = HistorialEstacion.query.filter_by(station_id=station_id, timestamp=ts).first()
+    fila = existente or HistorialEstacion(station_id=station_id, timestamp=ts)
+
+    fila.temp_avg = metric.get('tempAvg')
+    fila.temp_max = metric.get('tempHigh')
+    fila.temp_min = metric.get('tempLow')
+    fila.dewpt_avg = metric.get('dewptAvg')
+    fila.humedad_avg = obs.get('humidityAvg')
+    fila.humedad_max = obs.get('humidityHigh')
+    fila.humedad_min = obs.get('humidityLow')
+    fila.viento_avg = metric.get('windspeedAvg')
+    fila.viento_max = metric.get('windspeedHigh')
+    fila.rafaga_max = metric.get('windgustHigh')
+    fila.direccion_viento_avg = obs.get('winddirAvg')
+    fila.lluvia_mm = metric.get('precipTotal')
+    fila.lluvia_rate_max = metric.get('precipRate')
+    fila.presion_max = metric.get('pressureMax')
+    fila.presion_min = metric.get('pressureMin')
+    fila.radiacion_solar_max = obs.get('solarRadiationHigh')
+    fila.uv_max = obs.get('uvHigh')
+
+    if not existente:
+        db.session.add(fila)
+    db.session.commit()
+    return True
+
+
+def obtener_historial_estacion(station_id, dias=1):
+    limite = datetime.utcnow() - timedelta(days=dias)
+    filas = HistorialEstacion.query.filter(
+        HistorialEstacion.station_id == station_id,
+        HistorialEstacion.timestamp >= limite
+    ).order_by(HistorialEstacion.timestamp.asc()).all()
+    return [f.to_dict() for f in filas]
+
+
 def fahrenheit_a_celsius(f):
     if f is None:
         return None
