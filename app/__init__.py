@@ -107,7 +107,7 @@ def create_app():
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com https://js.arcgis.com; "
             "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com; "
-            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com"
+            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com https://api.open-meteo.com"
         )
         return response
 
