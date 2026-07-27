@@ -924,12 +924,14 @@ async function loadRadarLayer() {
   }
 }
 
-function triangleIcon(color) {
+function triangleIcon(color, parpadea) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="24" viewBox="0 0 26 24">
     <polygon points="13,1 25,22 1,22" fill="${color}" stroke="#1c1e22" stroke-width="1.5"/>
   </svg>`;
   return L.divIcon({
-    html: svg, className: '', iconSize: [26, 24], iconAnchor: [13, 20], popupAnchor: [0, -18],
+    html: svg,
+    className: parpadea ? 'gw-marker-parpadeo' : '',
+    iconSize: [26, 24], iconAnchor: [13, 20], popupAnchor: [0, -18],
   });
 }
 
@@ -948,7 +950,8 @@ async function fetchMapaLluvias() {
     data.forEach(est => {
       if (est.lat == null || est.lon == null) return;
       const color = RAIN_COLORS[est.nivel] || RAIN_COLORS.sin_dato;
-      const marker = L.marker([est.lat, est.lon], { icon: triangleIcon(color) }).addTo(rainMap);
+      const estaLloviendo = est.lluvia_mm > 0;
+      const marker = L.marker([est.lat, est.lon], { icon: triangleIcon(color, estaLloviendo) }).addTo(rainMap);
       const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
       marker.bindPopup(`<strong>${est.nombre}</strong><br>${est.id}<br>Lluvia hoy: ${mmTxt}${est.temp != null ? `<br>Temp: ${est.temp}°C` : ''}<br><em>Click en el triángulo para ver el historial</em>`);
       marker.on('click', () => openStationModal(est.id, est.nombre));
