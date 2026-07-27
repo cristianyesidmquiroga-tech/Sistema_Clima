@@ -570,32 +570,35 @@ body {
 
 .gw-rain-map-wrap {
   display: flex;
-  gap: 12px;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 10px;
 }
 .gw-rain-map {
-  flex: 1 1 auto;
-  height: 320px;
+  width: 100%;
+  height: 480px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.08);
   z-index: 0;
 }
 .gw-rain-legend {
-  flex: 0 0 170px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
   background: rgba(0,0,0,0.15);
   border: 1px solid rgba(255,255,255,0.05);
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px 14px;
   font-size: 12px;
   color: var(--text-primary);
 }
-.gw-rain-legend strong { display: block; margin-bottom: 8px; font-size: 12px; }
+.gw-rain-legend strong { flex: 0 0 100%; font-size: 12px; margin-bottom: 2px; }
 .gw-rain-legend-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
   color: var(--text-secondary);
+  white-space: nowrap;
 }
 .gw-dot {
   width: 12px;
@@ -611,8 +614,7 @@ body {
 .gw-dot-muy_alto   { background: #e53935; }
 
 @media (max-width: 520px) {
-  .gw-rain-map-wrap { flex-direction: column; }
-  .gw-rain-legend { flex: none; }
+  .gw-rain-map { height: 340px; }
 }
 
 /* ─── MODAL DE DETALLE POR ESTACION ─── */

@@ -377,10 +377,6 @@ function renderRealTime(data) {
   if(els.humInt) els.humInt.textContent = `${data.humedad_interior ?? '--'} %`;
 
   if (window.WeatherFX) WeatherFX.setMode(cond.fx);
-
-  // Actualizar label de unidad debajo de la temperatura
-  const unitEl = document.querySelector('.gw-unit.active');
-  if (unitEl) unitEl.textContent = tempLabel();
 }
 
 // ─── HISTORIAL ────────────────────────────────────────────────
@@ -840,6 +836,10 @@ function applyStoredPrefs() {
   document.querySelectorAll('#timeToggle .gw-toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.getAttribute('data-fmt') === timeFmt);
   });
+  const unitCEl2 = document.getElementById('unitC');
+  const unitFEl2 = document.getElementById('unitF');
+  if (unitCEl2) unitCEl2.classList.toggle('active', tempUnit === 'C');
+  if (unitFEl2) unitFEl2.classList.toggle('active', tempUnit === 'F');
 }
 
 // ─── POPOVER INFO ─────────────────────────────────────────────
@@ -884,8 +884,8 @@ function initRainMap() {
   const mapEl = document.getElementById('gwRainMap');
   if (!mapEl || typeof L === 'undefined') return;
   rainMap = L.map('gwRainMap', { scrollWheelZoom: false }).setView([5.96, -73.68], 11);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri',
     maxZoom: 19,
   }).addTo(rainMap);
 
@@ -914,6 +914,8 @@ async function loadRadarLayer() {
     radarLayer = L.tileLayer(tileUrl, {
       opacity: 0.6,
       attribution: 'Radar: RainViewer',
+      maxNativeZoom: 7,  // RainViewer solo tiene tiles hasta zoom 7; sin esto, en zooms mas altos aparece "Zoom Level Not Supported"
+      minZoom: 0,
     });
     const toggle = document.getElementById('gwRadarToggle');
     if (!toggle || toggle.checked) radarLayer.addTo(rainMap);
