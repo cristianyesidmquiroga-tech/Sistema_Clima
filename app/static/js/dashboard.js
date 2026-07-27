@@ -4,7 +4,13 @@
 
 const FINCA_LAT = 5.96;
 const FINCA_LON = -73.63;
-const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m,wind_direction_10m&timezone=America%2FBogota&forecast_days=2`;
+const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation_probability,precipitation&timezone=America%2FBogota&forecast_days=2`;
+
+// Umbrales para considerar que "va a llover" en el pronostico por hora.
+// Exige probabilidad Y cantidad estimada reales, para no mostrar lluvia
+// por un weathercode limite que en la practica casi nunca se cumple.
+const LLUVIA_PROB_MIN = 50;   // %
+const LLUVIA_MM_MIN   = 0.2;  // mm en esa hora
 
 const WMO = {
   0:{t:'Despejado',i:'/static/icon-sun.svg'},
@@ -250,15 +256,30 @@ function intentarSonidoInicial(fx, esTormenta) {
 }
 
 // ─── NOTIFICACIONES DEL NAVEGADOR PARA ALERTAS ────────────────
-const alertasNotificadas = new Set();
+// Por cada tipo de alerta se notifica máximo 2 veces mientras esté activa;
+// solo se vuelve a notificar cuando la alerta se apaga y se activa de nuevo.
+const MAX_NOTIFICACIONES_POR_ALERTA = 2;
+const estadoAlertasNotificadas = new Map(); // clase -> { veces }
+
 function notificarAlertasNuevas(alertas) {
   if (!('Notification' in window)) return;
-  const nuevas = alertas.filter(a => !alertasNotificadas.has(a.texto));
-  if (!nuevas.length) return;
+
+  const clasesActivas = new Set(alertas.map(a => a.clase));
+  for (const clase of estadoAlertasNotificadas.keys()) {
+    if (!clasesActivas.has(clase)) estadoAlertasNotificadas.delete(clase);
+  }
+
+  const pendientes = alertas.filter(a => {
+    const estado = estadoAlertasNotificadas.get(a.clase);
+    return !estado || estado.veces < MAX_NOTIFICACIONES_POR_ALERTA;
+  });
+  if (!pendientes.length) return;
 
   const mostrar = () => {
-    nuevas.forEach(a => {
-      alertasNotificadas.add(a.texto);
+    pendientes.forEach(a => {
+      const estado = estadoAlertasNotificadas.get(a.clase) || { veces: 0 };
+      estado.veces += 1;
+      estadoAlertasNotificadas.set(a.clase, estado);
       try {
         new Notification('Sistema Clima - Finca Lagunitas', {
           body: `${a.icono} ${a.texto}`,
@@ -609,7 +630,14 @@ function renderForecastCards() {
     } else if (omLookup[key] !== undefined) {
       const idx = omLookup[key];
       temp = convertTemp(hourly.temperature_2m[idx]);
-      const code = hourly.weathercode[idx];
+      let code = hourly.weathercode[idx];
+      const pop = hourly.precipitation_probability ? hourly.precipitation_probability[idx] : null;
+      const mm  = hourly.precipitation ? hourly.precipitation[idx] : null;
+      const esCodigoLluvia = code !== null && code >= 51;
+      const lluviaConfirmada = pop === null || mm === null
+        ? esCodigoLluvia
+        : (pop >= LLUVIA_PROB_MIN && mm >= LLUVIA_MM_MIN);
+      if (esCodigoLluvia && !lluviaConfirmada) code = 2; // baja a "Parc. nublado", no alcanza el umbral
       cond = code !== null ? (WMO[code] || {t:'Variable',i:'/static/icon-cloudy.svg'}) : {t:'--',i:'/static/icon-cloudy.svg'};
       const esNoche = h.getHours() < 6 || h.getHours() > 19;
       if (esNoche && cond.i === '/static/icon-sun.svg') {
@@ -673,7 +701,10 @@ async function fetchAnalisisHistorico() {
         const avgTemp = (sumTemp / data.length).toFixed(1);
         sumLluvia = sumLluvia.toFixed(1);
         
-        let labelTipo = historyTipo === 'dias' ? 'los últimos días' : (historyTipo === 'meses' ? 'los últimos meses' : 'los últimos años');
+        let labelTipo = historyTipo === 'dias' ? 'los últimos días'
+          : historyTipo === 'semanas' ? 'las últimas semanas'
+          : historyTipo === 'meses' ? 'los últimos meses'
+          : 'los últimos años';
         
         analysisEl.innerHTML = `
           <strong>Análisis de ${labelTipo}:</strong><br>

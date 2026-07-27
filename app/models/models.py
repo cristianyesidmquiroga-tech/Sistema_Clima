@@ -384,6 +384,12 @@ def obtener_analisis_historico(tipo="dias"):
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
             ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM-DD').desc()).limit(30).all()
+        elif tipo == "semanas":
+            query = db.session.query(
+                func.to_char(Lectura.timestamp, 'IYYY-IW').label('fecha'),
+                func.avg(Lectura.temp_exterior).label('temp_avg'),
+                func.max(Lectura.lluvia_dia).label('lluvia_max')
+            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'IYYY-IW').desc()).limit(12).all()
         elif tipo == "meses":
             query = db.session.query(
                 func.to_char(Lectura.timestamp, 'YYYY-MM').label('fecha'),
