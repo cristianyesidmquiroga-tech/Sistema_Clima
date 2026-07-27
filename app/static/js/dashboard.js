@@ -893,13 +893,13 @@ function initRainMap() {
   require([
     "esri/map", "esri/layers/OpenStreetMapLayer", "esri/layers/GraphicsLayer",
     "esri/layers/WebTiledLayer", "esri/graphic", "esri/geometry/Point",
-    "esri/SpatialReference", "esri/symbols/SimpleMarkerSymbol",
-    "esri/symbols/SimpleLineSymbol", "esri/renderers/HeatmapRenderer",
+    "esri/geometry/Polygon", "esri/SpatialReference", "esri/symbols/SimpleMarkerSymbol",
+    "esri/symbols/SimpleLineSymbol", "esri/symbols/SimpleFillSymbol", "esri/renderers/HeatmapRenderer",
     "esri/InfoTemplate", "esri/Color", "dojo/domReady!"
   ], function (Map, OpenStreetMapLayer, GraphicsLayer, WebTiledLayer, Graphic,
-               Point, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol,
-               HeatmapRenderer, InfoTemplate, Color) {
-    esriMods = { Graphic, Point, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol, HeatmapRenderer, InfoTemplate, Color };
+               Point, Polygon, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol,
+               SimpleFillSymbol, HeatmapRenderer, InfoTemplate, Color) {
+    esriMods = { Graphic, Point, Polygon, SpatialReference, SimpleMarkerSymbol, SimpleLineSymbol, SimpleFillSymbol, HeatmapRenderer, InfoTemplate, Color, GraphicsLayer };
 
     rainMap = new Map("gwRainMap", {
       center: [-73.68, 5.96],  // ArcGIS usa [lon, lat], al reves que Leaflet
@@ -908,6 +908,8 @@ function initRainMap() {
       logo: false,
     });
     rainMap.addLayer(new OpenStreetMapLayer());
+
+    cargarLimitesMunicipios();
 
     markersLayer = new GraphicsLayer();
     markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "${id}<br>Lluvia hoy: ${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
@@ -932,13 +934,52 @@ function initRainMap() {
     else rainMap.on("load", alMapaListo);
 
     const toggle = document.getElementById('gwRadarToggle');
-    if (toggle) {
-      toggle.addEventListener('change', () => {
-        if (!radarLayer) return;
-        radarLayer.setVisibility(toggle.checked);
-      });
-    }
+    if (toggle) toggle.addEventListener('change', actualizarVisibilidadRadar);
   });
+}
+
+const RADAR_MAX_ZOOM = 7;  // RainViewer no tiene tiles reales mas alla de este nivel
+
+function actualizarVisibilidadRadar() {
+  if (!radarLayer || !rainMap) return;
+  const toggle = document.getElementById('gwRadarToggle');
+  const activado = !toggle || toggle.checked;
+  radarLayer.setVisibility(activado && rainMap.getZoom() <= RADAR_MAX_ZOOM);
+}
+
+// ─── LIMITES DE MUNICIPIOS (Velez, Guavata, Barbosa, Puente Nacional) ──
+// Datos reales de OpenStreetMap (Nominatim), guardados una sola vez en
+// /static/data/municipios_region.geojson. Solo el borde, sin relleno.
+function geojsonARings(geometry) {
+  if (geometry.type === 'Polygon') return geometry.coordinates;
+  if (geometry.type === 'MultiPolygon') return geometry.coordinates.reduce((acc, poly) => acc.concat(poly), []);
+  return [];
+}
+
+async function cargarLimitesMunicipios() {
+  if (!rainMap || !esriMods) return;
+  try {
+    const res = await fetch('/static/data/municipios_region.geojson');
+    const geojson = await res.json();
+    const { Graphic, Polygon, SpatialReference, SimpleFillSymbol, SimpleLineSymbol, Color, GraphicsLayer } = esriMods;
+    const wgs84 = new SpatialReference({ wkid: 4326 });
+    const borde = new SimpleLineSymbol(SimpleLineSymbol.STYLE_SOLID, new Color('#1c1e22'), 2);
+    const simbolo = new SimpleFillSymbol(SimpleFillSymbol.STYLE_NULL, borde, null);
+
+    const boundariesLayer = new GraphicsLayer();
+    geojson.features.forEach(f => {
+      const rings = geojsonARings(f.geometry);
+      if (!rings.length) return;
+      const poly = new Polygon({ rings, spatialReference: wgs84 });
+      boundariesLayer.add(new Graphic(poly, simbolo));
+    });
+    // Se agrega justo arriba del basemap (indice 1) para que quede
+    // debajo de los triangulos y el heatmap, sin importar el orden
+    // real en que terminen las promesas asincronas.
+    rainMap.addLayer(boundariesLayer, 1);
+  } catch (e) {
+    console.error('Error cargando limites de municipios', e);
+  }
 }
 
 // ─── RADAR REAL (RainViewer, gratis para uso personal/educativo) ──
@@ -955,7 +996,13 @@ async function loadRadarLayer() {
     require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
       radarLayer = new WebTiledLayer(tileUrl, { id: "radar", opacity: 0.6 });
       rainMap.addLayer(radarLayer);
-      if (toggle) radarLayer.setVisibility(toggle.checked);
+      actualizarVisibilidadRadar();
+      // RainViewer solo tiene tiles reales hasta zoom ~7. WebTiledLayer
+      // (a diferencia de Leaflet) no tiene una opcion para "no pedir
+      // zooms que no existen", asi que en vez de mostrar el cartel de
+      // "Zoom Level Not Supported" lo ocultamos nosotros mismos cuando
+      // el zoom es mas cercano que eso.
+      rainMap.on("zoom-end", actualizarVisibilidadRadar);
     });
   } catch (e) {
     console.error('Error cargando radar RainViewer', e);
