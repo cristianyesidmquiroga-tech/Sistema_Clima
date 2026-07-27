@@ -32,6 +32,15 @@ services:
       STATION_PASSKEY: ${STATION_PASSKEY:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       ENABLE_TEST_ENDPOINT: ${ENABLE_TEST_ENDPOINT:-false}
+      WU_API_KEY: ${WU_API_KEY:-}
+      LIMITE_HORA_COLOMBIA: ${LIMITE_HORA_COLOMBIA:-1000 per hour}
+      LIMITE_HORA_EXTRANJERO: ${LIMITE_HORA_EXTRANJERO:-50 per hour}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_TO: ${EMAIL_TO:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     expose:
       - "8080"
     ports:

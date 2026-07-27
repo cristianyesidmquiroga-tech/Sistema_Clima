@@ -6,12 +6,18 @@ const FINCA_LAT = 5.96;
 const FINCA_LON = -73.63;
 
 // ─── LIMITE DE CLICS (evita saturar el backend a punta de clicks) ─
-const _ultimoClickPorKey = {};
-function puedeClickear(key, msEspera = 1200) {
+// Cada boton/accion permite hasta `maxClicks` clics dentro de `ventanaMs`;
+// pasado ese cupo queda bloqueado hasta que la ventana se reinicia.
+const _contadorClicksPorKey = {};
+function puedeClickear(key, maxClicks = 20, ventanaMs = 3_600_000) {
   const ahora = Date.now();
-  const anterior = _ultimoClickPorKey[key] || 0;
-  if (ahora - anterior < msEspera) return false;
-  _ultimoClickPorKey[key] = ahora;
+  let registro = _contadorClicksPorKey[key];
+  if (!registro || ahora - registro.inicio > ventanaMs) {
+    registro = { inicio: ahora, cuenta: 0 };
+    _contadorClicksPorKey[key] = registro;
+  }
+  if (registro.cuenta >= maxClicks) return false;
+  registro.cuenta++;
   return true;
 }
 const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation_probability,precipitation&timezone=America%2FBogota&forecast_days=2`;
@@ -756,6 +762,7 @@ async function fetchAnalisisHistorico() {
 // ─── LISTENERS ───────────────────────────────────────────────
 document.querySelectorAll('.gw-tab').forEach(btn => {
   btn.addEventListener('click', e => {
+    if (!puedeClickear('tab-chart')) return;
     document.querySelectorAll('.gw-tab').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     currentTab = e.target.getAttribute('data-target');
@@ -765,7 +772,7 @@ document.querySelectorAll('.gw-tab').forEach(btn => {
 
 document.querySelectorAll('.gw-filter-btn').forEach(btn => {
   btn.addEventListener('click', e => {
-    if (!puedeClickear('filtro-historico', 1200)) return;
+    if (!puedeClickear('filtro-historico')) return;
     document.querySelectorAll('.gw-filter-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     historyTipo = e.target.getAttribute('data-tipo');
@@ -974,7 +981,7 @@ function destruirStationCharts() {
 }
 
 async function openStationModal(stationId, nombre) {
-  if (!puedeClickear('modal-estacion-' + stationId, 1500)) return;
+  if (!puedeClickear('modal-estacion-' + stationId)) return;
   const modal = document.getElementById('gwStationModal');
   const titulo = document.getElementById('gwStationModalTitle');
   if (!modal || !titulo) return;

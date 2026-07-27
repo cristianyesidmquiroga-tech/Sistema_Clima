@@ -1,16 +1,40 @@
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 from app.models.models import db
+from app.security import limite_dinamico_por_pais, alertar_limite_excedido
 import os
 
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+
+def _limite_dinamico():
+    return limite_dinamico_por_pais(get_remote_address())
+
+
+def _en_ruptura_de_limite(request_limit):
+    ip = get_remote_address()
+    alertar_limite_excedido(ip, request.path, str(request_limit.limit))
+
+
+limiter = Limiter(
+    key_func=get_remote_address,
+    default_limits=[_limite_dinamico],
+    on_breach=_en_ruptura_de_limite,
+)
 
 
 def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
+    # Detras de Traefik (1 solo proxy): confiar en X-Forwarded-For/Proto
+    # para que request.remote_addr sea la IP real del visitante, no la
+    # IP interna del proxy.
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
     limiter.init_app(app)
+
+    @app.errorhandler(429)
+    def limite_excedido(e):
+        return jsonify({"error": "Demasiadas peticiones, intenta mas tarde"}), 403
 
     # CORS: restringido al/los origenes permitidos por ALLOWED_ORIGINS
     # (separados por coma). Si no se define, no se habilita CORS

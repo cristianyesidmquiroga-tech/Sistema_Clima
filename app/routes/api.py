@@ -114,7 +114,7 @@ def get_moon_phase(date):
     return b
 
 @bp.route('/data/report/', methods=['POST', 'GET'])
-@limiter.limit("20 per minute")
+@limiter.limit("120 per hour")
 def recibir_datos():
     """La estación envía datos aquí cada 60 segundos"""
     if request.method == 'POST':
@@ -136,7 +136,7 @@ def recibir_datos():
     return "OK", 200
 
 @bp.route('/api/actual')
-@limiter.limit("60 per minute")
+@limiter.limit("300 per hour")
 def api_actual():
     datos = obtener_ultima_lectura()
     if not datos:
@@ -173,7 +173,7 @@ def api_actual():
     return jsonify(datos)
 
 @bp.route('/api/historial')
-@limiter.limit("30 per minute")
+@limiter.limit("150 per hour")
 def api_historial():
     horas = request.args.get('horas', 24, type=int)
     horas = max(1, min(horas, 24 * 30))
@@ -181,12 +181,12 @@ def api_historial():
     return jsonify(datos)
 
 @bp.route('/api/stats')
-@limiter.limit("30 per minute")
+@limiter.limit("150 per hour")
 def api_stats():
     return jsonify(obtener_stats_dia())
 
 @bp.route('/api/stats/comparative')
-@limiter.limit("30 per minute")
+@limiter.limit("150 per hour")
 def api_stats_comparative():
     stats = obtener_stats_agrupadas()
     
@@ -216,7 +216,7 @@ def api_stats_comparative():
     })
 
 @bp.route('/api/test')
-@limiter.limit("10 per minute")
+@limiter.limit("30 per hour")
 def api_test():
     if not ENABLE_TEST_ENDPOINT:
         return jsonify({"error": "Endpoint deshabilitado"}), 404
@@ -248,7 +248,7 @@ def dashboard():
     return render_template('index.html')
 
 @bp.route('/api/mapa_lluvias')
-@limiter.limit("15 per minute")
+@limiter.limit("60 per hour")
 def api_mapa_lluvias():
     import time
     ahora = time.time()
@@ -284,7 +284,7 @@ def api_mapa_lluvias():
     return jsonify(resultado)
 
 @bp.route('/api/estacion/<station_id>/historial')
-@limiter.limit("20 per minute")
+@limiter.limit("80 per hour")
 def api_estacion_historial(station_id):
     ids_validos = {e["id"] for e in ESTACIONES_MAPA_LLUVIAS}
     if station_id not in ids_validos:
@@ -298,7 +298,7 @@ def api_estacion_historial(station_id):
     return jsonify(datos)
 
 @bp.route('/api/analisis')
-@limiter.limit("20 per minute")
+@limiter.limit("80 per hour")
 def api_analisis():
     tipo = request.args.get('tipo', 'dias')
     if tipo not in ('dias', 'semanas', 'meses', 'años', 'anos'):
@@ -307,7 +307,7 @@ def api_analisis():
     return jsonify(datos)
 
 @bp.route('/api/fecha')
-@limiter.limit("20 per minute")
+@limiter.limit("80 per hour")
 def api_fecha():
     fecha = request.args.get('fecha')
     if not fecha:
@@ -334,7 +334,7 @@ COLUMNAS_EXPORTAR = [
 ]
 
 @bp.route('/api/exportar')
-@limiter.limit("6 per minute")
+@limiter.limit("20 per hour")
 def api_exportar():
     dias = request.args.get('dias', 7, type=int)
     dias = max(1, min(dias, 90))
