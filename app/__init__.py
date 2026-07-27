@@ -1,10 +1,16 @@
 from flask import Flask
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from app.models.models import db
 import os
 
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per minute"])
+
+
 def create_app():
     app = Flask(__name__, template_folder='templates', static_folder='static')
+    limiter.init_app(app)
 
     # CORS: restringido al/los origenes permitidos por ALLOWED_ORIGINS
     # (separados por coma). Si no se define, no se habilita CORS
@@ -45,6 +51,14 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://unpkg.com; "
+            "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://tilecache.rainviewer.com; "
+            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com"
+        )
         return response
 
     return app

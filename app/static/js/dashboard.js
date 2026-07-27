@@ -4,6 +4,16 @@
 
 const FINCA_LAT = 5.96;
 const FINCA_LON = -73.63;
+
+// ─── LIMITE DE CLICS (evita saturar el backend a punta de clicks) ─
+const _ultimoClickPorKey = {};
+function puedeClickear(key, msEspera = 1200) {
+  const ahora = Date.now();
+  const anterior = _ultimoClickPorKey[key] || 0;
+  if (ahora - anterior < msEspera) return false;
+  _ultimoClickPorKey[key] = ahora;
+  return true;
+}
 const OPEN_METEO_URL = `https://api.open-meteo.com/v1/forecast?latitude=${FINCA_LAT}&longitude=${FINCA_LON}&hourly=temperature_2m,weathercode,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation_probability,precipitation&timezone=America%2FBogota&forecast_days=2`;
 
 // Umbrales para considerar que "va a llover" en el pronostico por hora.
@@ -755,6 +765,7 @@ document.querySelectorAll('.gw-tab').forEach(btn => {
 
 document.querySelectorAll('.gw-filter-btn').forEach(btn => {
   btn.addEventListener('click', e => {
+    if (!puedeClickear('filtro-historico', 1200)) return;
     document.querySelectorAll('.gw-filter-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     historyTipo = e.target.getAttribute('data-tipo');
@@ -963,6 +974,7 @@ function destruirStationCharts() {
 }
 
 async function openStationModal(stationId, nombre) {
+  if (!puedeClickear('modal-estacion-' + stationId, 1500)) return;
   const modal = document.getElementById('gwStationModal');
   const titulo = document.getElementById('gwStationModalTitle');
   if (!modal || !titulo) return;

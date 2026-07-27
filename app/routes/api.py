@@ -1,8 +1,10 @@
 import os
 import io
+import hmac
 import requests
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
+from app import limiter
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
@@ -112,6 +114,7 @@ def get_moon_phase(date):
     return b
 
 @bp.route('/data/report/', methods=['POST', 'GET'])
+@limiter.limit("20 per minute")
 def recibir_datos():
     """La estación envía datos aquí cada 60 segundos"""
     if request.method == 'POST':
@@ -122,7 +125,7 @@ def recibir_datos():
     if not datos:
         return "No data", 400
 
-    if STATION_PASSKEY and datos.get('PASSKEY') != STATION_PASSKEY:
+    if STATION_PASSKEY and not hmac.compare_digest(str(datos.get('PASSKEY', '')), STATION_PASSKEY):
         return "Forbidden", 403
 
     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Datos recibidos de la estación:")
@@ -133,6 +136,7 @@ def recibir_datos():
     return "OK", 200
 
 @bp.route('/api/actual')
+@limiter.limit("60 per minute")
 def api_actual():
     datos = obtener_ultima_lectura()
     if not datos:
@@ -169,16 +173,20 @@ def api_actual():
     return jsonify(datos)
 
 @bp.route('/api/historial')
+@limiter.limit("30 per minute")
 def api_historial():
     horas = request.args.get('horas', 24, type=int)
+    horas = max(1, min(horas, 24 * 30))
     datos = obtener_historial(horas)
     return jsonify(datos)
 
 @bp.route('/api/stats')
+@limiter.limit("30 per minute")
 def api_stats():
     return jsonify(obtener_stats_dia())
 
 @bp.route('/api/stats/comparative')
+@limiter.limit("30 per minute")
 def api_stats_comparative():
     stats = obtener_stats_agrupadas()
     
@@ -208,6 +216,7 @@ def api_stats_comparative():
     })
 
 @bp.route('/api/test')
+@limiter.limit("10 per minute")
 def api_test():
     if not ENABLE_TEST_ENDPOINT:
         return jsonify({"error": "Endpoint deshabilitado"}), 404
@@ -239,6 +248,7 @@ def dashboard():
     return render_template('index.html')
 
 @bp.route('/api/mapa_lluvias')
+@limiter.limit("15 per minute")
 def api_mapa_lluvias():
     import time
     ahora = time.time()
@@ -274,22 +284,30 @@ def api_mapa_lluvias():
     return jsonify(resultado)
 
 @bp.route('/api/estacion/<station_id>/historial')
+@limiter.limit("20 per minute")
 def api_estacion_historial(station_id):
     ids_validos = {e["id"] for e in ESTACIONES_MAPA_LLUVIAS}
     if station_id not in ids_validos:
         return jsonify({"error": "Estacion desconocida"}), 404
-    dias = request.args.get('dias', 1, type=int)
-    dias = max(1, min(dias, 730))
+    # De cara al publico solo se muestra la ultima semana. El historial
+    # completo (hasta 2 anos, traido por scripts/backfill_historial_wu.py)
+    # queda guardado en la base de datos para uso interno/privado.
+    dias = request.args.get('dias', 7, type=int)
+    dias = max(1, min(dias, 7))
     datos = obtener_historial_estacion(station_id, dias)
     return jsonify(datos)
 
 @bp.route('/api/analisis')
+@limiter.limit("20 per minute")
 def api_analisis():
     tipo = request.args.get('tipo', 'dias')
+    if tipo not in ('dias', 'semanas', 'meses', 'años', 'anos'):
+        return jsonify({"error": "tipo invalido"}), 400
     datos = obtener_analisis_historico(tipo)
     return jsonify(datos)
 
 @bp.route('/api/fecha')
+@limiter.limit("20 per minute")
 def api_fecha():
     fecha = request.args.get('fecha')
     if not fecha:
@@ -316,8 +334,10 @@ COLUMNAS_EXPORTAR = [
 ]
 
 @bp.route('/api/exportar')
+@limiter.limit("6 per minute")
 def api_exportar():
     dias = request.args.get('dias', 7, type=int)
+    dias = max(1, min(dias, 90))
     lecturas = obtener_lecturas_rango(dias)
 
     wb = Workbook()
