@@ -1008,7 +1008,9 @@ function renderStationCharts(data) {
   destruirStationCharts();
   if (!data.length) return;
 
-  const textColor = getChartTextColor ? getChartTextColor() : 'rgba(255,255,255,0.9)';
+  // El modal siempre tiene fondo blanco (independiente del tema de la
+  // pagina), asi que los textos de las graficas van siempre oscuros.
+  const textColor = '#333333';
   const labels = data.map(d => {
     const t = new Date(d.timestamp);
     return t.getHours().toString().padStart(2, '0') + ':00';
@@ -1019,7 +1021,7 @@ function renderStationCharts(data) {
     plugins: { legend: { labels: { color: textColor, font: { size: 10 }, boxWidth: 10 } } },
     scales: {
       x: { ticks: { color: textColor, font: { size: 9 } }, grid: { display: false } },
-      y: { ticks: { color: textColor, font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+      y: { ticks: { color: textColor, font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.08)' } },
     },
   };
 
@@ -1052,7 +1054,7 @@ function renderStationCharts(data) {
   stationCharts.pressure = new Chart(document.getElementById('gwStChartPressure').getContext('2d'), {
     type: 'line',
     data: { labels, datasets: [
-      { label: 'Presión hPa (máx)', data: data.map(d => d.presion_max), borderColor: '#e0e0e0', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
+      { label: 'Presión hPa (máx)', data: data.map(d => d.presion_max), borderColor: '#5c6bc0', backgroundColor: 'transparent', tension: 0.3, pointRadius: 0, borderWidth: 2 },
     ]},
     options: baseOpts,
   });
