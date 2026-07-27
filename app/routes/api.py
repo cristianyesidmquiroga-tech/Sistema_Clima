@@ -274,6 +274,8 @@ def api_mapa_lluvias():
                 "lluvia_mm": lluvia_mm,
                 "nivel": _nivel_lluvia(lluvia_mm),
                 "temp": metric.get("temp"),
+                "humedad": obs.get("humidity"),
+                "viento": metric.get("windSpeed"),
                 "obs_local": obs.get("obsTimeLocal"),
             })
         except Exception as e:

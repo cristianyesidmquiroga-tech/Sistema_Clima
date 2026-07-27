@@ -556,6 +556,34 @@ body {
   color: var(--text-secondary);
   margin: -8px 0 12px;
 }
+.gw-rain-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.gw-rain-summary-item {
+  background: rgba(0,0,0,0.15);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  padding: 10px 8px;
+  text-align: center;
+}
+.gw-rain-summary-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.gw-rain-summary-value {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--tab-accent, #fbbc04);
+}
+@media (max-width: 520px) {
+  .gw-rain-summary { grid-template-columns: repeat(2, 1fr); }
+}
 .gw-radar-toggle {
   display: flex;
   align-items: center;

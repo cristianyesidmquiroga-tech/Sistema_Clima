@@ -297,7 +297,7 @@ function notificarAlertasNuevas(alertas) {
       estado.veces += 1;
       estadoAlertasNotificadas.set(a.clase, estado);
       try {
-        new Notification('Sistema Clima - Finca Lagunitas', {
+        new Notification('Sistema Clima - Región Guayaba-Bocadillo', {
           body: `${a.icono} ${a.texto}`,
           icon: '/static/icon-192.png',
         });
@@ -884,7 +884,7 @@ function initRainMap() {
   const mapEl = document.getElementById('gwRainMap');
   if (!mapEl || typeof L === 'undefined') return;
   rainMap = L.map('gwRainMap', { scrollWheelZoom: false }).setView([5.96, -73.68], 11);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri',
     maxZoom: 19,
   }).addTo(rainMap);
@@ -972,9 +972,35 @@ async function fetchMapaLluvias() {
         gradient: { 0.1: '#4fc3f7', 0.4: '#66bb6a', 0.7: '#ffa726', 1.0: '#e53935' },
       }).addTo(rainMap);
     }
+
+    actualizarPromedioRegional(data);
   } catch (e) {
     console.error('Error cargando mapa de lluvias', e);
   }
+}
+
+function promedio(valores) {
+  const validos = valores.filter(v => typeof v === 'number' && !isNaN(v));
+  if (!validos.length) return null;
+  return validos.reduce((a, b) => a + b, 0) / validos.length;
+}
+
+function actualizarPromedioRegional(data) {
+  const elTemp = document.getElementById('gwRegionTemp');
+  const elHum = document.getElementById('gwRegionHum');
+  const elViento = document.getElementById('gwRegionViento');
+  const elLluvia = document.getElementById('gwRegionLluvia');
+  if (!elTemp) return;
+
+  const tempProm = promedio(data.map(d => d.temp));
+  const humProm = promedio(data.map(d => d.humedad));
+  const vientoProm = promedio(data.map(d => d.viento));
+  const lluviaProm = promedio(data.map(d => d.lluvia_mm));
+
+  elTemp.textContent    = tempProm   != null ? `${tempProm.toFixed(1)}°C` : '--°C';
+  elHum.textContent     = humProm    != null ? `${humProm.toFixed(0)}%`   : '--%';
+  elViento.textContent  = vientoProm != null ? `${vientoProm.toFixed(1)} km/h` : '-- km/h';
+  elLluvia.textContent  = lluviaProm != null ? `${lluviaProm.toFixed(1)} mm`   : '-- mm';
 }
 
 // ─── MODAL DE DETALLE POR ESTACION ────────────────────────────

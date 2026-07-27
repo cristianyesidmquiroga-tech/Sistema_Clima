@@ -1,7 +1,7 @@
 {
-  "name": "Sistema Clima - Finca Lagunitas",
-  "short_name": "Clima Lagunitas",
-  "description": "Clima en vivo de Finca Lagunitas, Guavatá, Santander",
+  "name": "Sistema Clima - Región Guayaba-Bocadillo",
+  "short_name": "Clima Guayaba",
+  "description": "Clima en vivo de la Región Guayaba-Bocadillo, Santander",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1c1e22",

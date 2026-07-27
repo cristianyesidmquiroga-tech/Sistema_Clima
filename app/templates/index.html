@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sistema Clima | Finca Lagunitas</title>
+  <title>Sistema Clima | Región Guayaba-Bocadillo</title>
   <link rel="icon" type="image/svg+xml" href="/static/icon-sun.svg">
   <link rel="apple-touch-icon" href="/static/icon-apple-touch.png">
   <link rel="manifest" href="/static/manifest.json">
   <meta name="theme-color" content="#1c1e22">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Clima Lagunitas">
+  <meta name="apple-mobile-web-app-title" content="Clima Guayaba-Bocadillo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=35">
+  <link rel="stylesheet" href="/static/css/style.css?v=36">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 </head>
@@ -34,7 +34,7 @@
     <header class="gw-header">
       <div class="gw-location">
         <span class="gw-location-dot">●</span>
-        <span class="gw-location-text">Finca Lagunitas, Guavatá, Santander</span>
+        <span class="gw-location-text">Región Guayaba-Bocadillo</span>
       </div>
       <div class="gw-header-right">
         <!-- Preferencias de temperatura -->
@@ -210,7 +210,25 @@
       <div class="gw-history-header">
         <h3 class="gw-history-title">🌧️ Lluvias en Tiempo Real — Región Guayaba, Bocadillo</h3>
       </div>
-      <p class="gw-rain-map-note">Datos de estaciones cercanas (Wunderground), pueden tener hasta ~20 min de retraso. Las manchas de color son una estimación por interpolación entre estaciones, no una imagen de radar real.</p>
+      <p class="gw-rain-map-note">Datos de estaciones cercanas, pueden tener hasta ~20 min de retraso. Las manchas de color son una estimación por interpolación entre estaciones, no una imagen de radar real.</p>
+      <div class="gw-rain-summary" id="gwRainSummary">
+        <div class="gw-rain-summary-item">
+          <span class="gw-rain-summary-label">Temp. promedio</span>
+          <span class="gw-rain-summary-value" id="gwRegionTemp">--°C</span>
+        </div>
+        <div class="gw-rain-summary-item">
+          <span class="gw-rain-summary-label">Humedad promedio</span>
+          <span class="gw-rain-summary-value" id="gwRegionHum">--%</span>
+        </div>
+        <div class="gw-rain-summary-item">
+          <span class="gw-rain-summary-label">Viento promedio</span>
+          <span class="gw-rain-summary-value" id="gwRegionViento">-- km/h</span>
+        </div>
+        <div class="gw-rain-summary-item">
+          <span class="gw-rain-summary-label">Lluvia promedio (hoy)</span>
+          <span class="gw-rain-summary-value" id="gwRegionLluvia">-- mm</span>
+        </div>
+      </div>
       <label class="gw-radar-toggle">
         <input type="checkbox" id="gwRadarToggle" checked>
         Mostrar radar real (RainViewer)
@@ -283,6 +301,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script src="/static/js/dashboard.js?v=39"></script>
+  <script src="/static/js/dashboard.js?v=41"></script>
 </body>
 </html>
