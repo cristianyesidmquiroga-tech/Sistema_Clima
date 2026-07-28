@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="Clima Guayaba-Bocadillo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=36">
+  <link rel="stylesheet" href="/static/css/style.css?v=37">
   <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
 </head>
 <body class="theme-dark">
@@ -232,15 +232,23 @@
         <input type="checkbox" id="gwRadarToggle" checked>
         Mostrar radar real (RainViewer) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo)
       </label>
+      <label class="gw-radar-toggle">
+        Nubes (satélite NASA GOES) — solo visible si alejás el zoom:
+        <select id="gwSatSelect">
+          <option value="off">Apagado</option>
+          <option value="geocolor" selected>Nubes normales (GeoColor)</option>
+          <option value="infrared">Nubes infrarrojo (altura/tormenta)</option>
+        </select>
+      </label>
       <div class="gw-rain-map-wrap">
         <div id="gwRainMap" class="gw-rain-map"></div>
         <div class="gw-rain-legend">
-          <strong>Lluvia acumulada (hoy)</strong>
-          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-sin_lluvia"></span> Sin lluvia (0 mm)</div>
-          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-bajo"></span> Bajo (0.1–10 mm)</div>
-          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-moderado"></span> Moderado (10.1–30 mm)</div>
-          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-alto"></span> Alto (30.1–50 mm)</div>
-          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-muy_alto"></span> Muy alto (&gt;50 mm)</div>
+          <strong>Lluvia ahora mismo</strong>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-sin_lluvia"></span> Sin lluvia (0 mm/h)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-bajo"></span> Bajo (0.1–2.5 mm/h)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-moderado"></span> Moderado (2.6–7.5 mm/h)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-alto"></span> Alto (7.6–15 mm/h)</div>
+          <div class="gw-rain-legend-item"><span class="gw-dot gw-dot-muy_alto"></span> Muy alto (&gt;15 mm/h)</div>
         </div>
       </div>
       <div class="gw-rain-help">
@@ -298,6 +306,6 @@
   <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=29"></script>
   <script src="/static/js/weather-fx.js?v=29"></script>
   <script src="https://js.arcgis.com/3.28/"></script>
-  <script src="/static/js/dashboard.js?v=45"></script>
+  <script src="/static/js/dashboard.js?v=46"></script>
 </body>
 </html>

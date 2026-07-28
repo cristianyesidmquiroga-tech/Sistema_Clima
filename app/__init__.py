@@ -106,8 +106,8 @@ def create_app():
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com; "
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com https://js.arcgis.com; "
-            "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com; "
-            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com https://api.open-meteo.com"
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
+            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
         )
         return response
 

@@ -39,16 +39,19 @@ ESTACIONES_MAPA_LLUVIAS = [
 CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos, cacheado en Redis via @cache.cached
 
 
-def _nivel_lluvia(mm):
-    if mm is None:
+def _nivel_lluvia(mm_hr):
+    """Clasifica segun la TASA de lluvia actual (mm/h), no el acumulado
+    del dia: asi que en cuanto para de llover, la estacion vuelve a
+    'sin_lluvia' sola, sin esperar a que pase la medianoche."""
+    if mm_hr is None:
         return "sin_dato"
-    if mm <= 0:
+    if mm_hr <= 0:
         return "sin_lluvia"
-    if mm <= 10:
+    if mm_hr <= 2.5:
         return "bajo"
-    if mm <= 30:
+    if mm_hr <= 7.5:
         return "moderado"
-    if mm <= 50:
+    if mm_hr <= 15:
         return "alto"
     return "muy_alto"
 
@@ -264,18 +267,20 @@ def api_mapa_lluvias():
                 continue
             metric = obs.get("metric", {})
             lluvia_mm = metric.get("precipTotal")
+            lluvia_rate = metric.get("precipRate")
             resultado.append({
                 "id": est["id"],
                 "nombre": est["nombre"],
                 "lat": obs.get("lat"),
                 "lon": obs.get("lon"),
+                # lluvia_mm es el acumulado del dia (solo informativo, se
+                # muestra en el popup). El color y el parpadeo del
+                # triangulo dependen de lluvia_rate (cuanto esta
+                # lloviendo AHORA), asi que en cuanto para de llover
+                # vuelve solo a "sin_lluvia", sin esperar a medianoche.
                 "lluvia_mm": lluvia_mm,
-                "nivel": _nivel_lluvia(lluvia_mm),
-                # Tasa de lluvia AHORA MISMO (distinta del acumulado del
-                # dia): una estacion puede tener lluvia_mm > 0 porque
-                # llovio en la manana y ya estar despejada. El parpadeo
-                # de "lloviendo ahora" en el mapa se decide con esto.
-                "lluvia_rate": metric.get("precipRate"),
+                "nivel": _nivel_lluvia(lluvia_rate),
+                "lluvia_rate": lluvia_rate,
                 "temp": metric.get("temp"),
                 "humedad": obs.get("humidity"),
                 "viento": metric.get("windSpeed"),

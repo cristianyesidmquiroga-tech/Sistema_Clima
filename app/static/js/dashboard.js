@@ -875,11 +875,11 @@ let markersLayer = null;
 let heatLayer = null;
 let radarLayer = null;
 
-// Techo de intensidad para el heatmap: a partir de esta lluvia (mm) se
-// muestra el color mas fuerte de la escala. Es una interpolacion entre
-// las 6 estaciones, no radar real, asi que solo busca dar una idea
-// aproximada de donde llovio mas fuerte, no la forma exacta de la lluvia.
-const HEATMAP_MM_MAX = 50;
+// Techo de intensidad para el heatmap, en mm/h (tasa actual, no
+// acumulado del dia). Es una interpolacion entre las 6 estaciones, no
+// radar real, asi que solo busca dar una idea aproximada de donde esta
+// lloviendo mas fuerte ahora mismo.
+const HEATMAP_RATE_MAX = 15;
 
 function initRainMap() {
   const mapEl = document.getElementById('gwRainMap');
@@ -907,7 +907,7 @@ function initRainMap() {
     cargarLimitesMunicipios();
 
     markersLayer = new GraphicsLayer();
-    markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "Lluvia hoy: ${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
+    markersLayer.setInfoTemplate(new InfoTemplate("${nombre}", "${lluviaTxt}<br>${tempTxt}<br><em>Click en el triángulo para ver el historial</em>"));
     markersLayer.on("click", function (evt) {
       const attrs = evt.graphic.attributes;
       if (attrs && attrs.stationId) openStationModal(attrs.stationId, attrs.nombre);
@@ -919,6 +919,7 @@ function initRainMap() {
       rainMap.addLayer(heatLayer);
       rainMap.addLayer(markersLayer);
       loadRadarLayer();
+      loadSatelliteLayer();
       fetchMapaLluvias();
     }
     // El mapa puede terminar de cargar antes de que lleguemos a
@@ -930,6 +931,17 @@ function initRainMap() {
 
     const toggle = document.getElementById('gwRadarToggle');
     if (toggle) toggle.addEventListener('change', actualizarVisibilidadRadar);
+
+    const satSelect = document.getElementById('gwSatSelect');
+    if (satSelect) {
+      satSelect.addEventListener('change', () => {
+        if (satSelect.value === 'off') {
+          if (satLayer) satLayer.setVisibility(false);
+        } else {
+          loadSatelliteLayer();  // recrea la capa con el tipo elegido
+        }
+      });
+    }
   });
 }
 
@@ -1004,6 +1016,54 @@ async function loadRadarLayer() {
   }
 }
 
+// ─── NUBES REALES (satelite NASA GOES-East, gratis, sin API key) ──
+// GeoColor: se ve como una foto normal, buena para un vistazo rapido.
+// Band13 infrarrojo: mide temperatura de la punta de la nube (nubes
+// mas frias = mas altas = mas probable que sean tormenta), util para
+// juzgar severidad, no solo si hay nubes o no.
+const CAPAS_SATELITE = {
+  geocolor: { layer: 'GOES-East_ABI_GeoColor', tileMatrixSet: 'GoogleMapsCompatible_Level7', maxZoom: 7 },
+  infrared: { layer: 'GOES-East_ABI_Band13_Clean_Infrared', tileMatrixSet: 'GoogleMapsCompatible_Level6', maxZoom: 6 },
+};
+let satLayer = null;
+let satMaxZoom = 7;
+
+function horaGibsMasReciente() {
+  // GIBS publica en pasos de 10 min; restamos 20 min de margen para
+  // asegurarnos de pedir un fotograma que ya este disponible.
+  const ahora = new Date(Date.now() - 20 * 60 * 1000);
+  ahora.setUTCSeconds(0, 0);
+  ahora.setUTCMinutes(Math.floor(ahora.getUTCMinutes() / 10) * 10);
+  return ahora.toISOString().replace(/\.\d+Z$/, 'Z');
+}
+
+function actualizarVisibilidadSatelite() {
+  if (!satLayer || !rainMap) return;
+  const select = document.getElementById('gwSatSelect');
+  const activado = select && select.value !== 'off';
+  satLayer.setVisibility(activado && rainMap.getZoom() <= satMaxZoom);
+}
+
+function loadSatelliteLayer() {
+  if (!esriMods || !rainMap) return;
+  const select = document.getElementById('gwSatSelect');
+  const clave = select ? select.value : 'geocolor';
+  if (clave === 'off') return;
+  const cfg = CAPAS_SATELITE[clave] || CAPAS_SATELITE.geocolor;
+  satMaxZoom = cfg.maxZoom;
+
+  const tiempo = horaGibsMasReciente();
+  const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/\${level}/\${row}/\${col}.png`;
+
+  require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
+    if (satLayer) rainMap.removeLayer(satLayer);
+    satLayer = new WebTiledLayer(tileUrl, { id: "satelite", opacity: 0.7 });
+    rainMap.addLayer(satLayer);
+    actualizarVisibilidadSatelite();
+    rainMap.on("zoom-end", actualizarVisibilidadSatelite);
+  });
+}
+
 function crearSimboloTriangulo(color) {
   const { SimpleMarkerSymbol, SimpleLineSymbol, Color } = esriMods;
   return new SimpleMarkerSymbol(
@@ -1047,20 +1107,20 @@ async function fetchMapaLluvias() {
       if (est.lat == null || est.lon == null) return;
       const color = RAIN_COLORS[est.nivel] || RAIN_COLORS.sin_dato;
       const punto = new Point(est.lon, est.lat, wgs84);
+      const rateTxt = est.lluvia_rate != null ? `${est.lluvia_rate.toFixed(1)} mm/h` : 'sin dato';
       const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
       const tempTxt = est.temp != null ? `Temp: ${est.temp}°C` : '';
       const graphic = new Graphic(punto, crearSimboloTriangulo(color), {
-        stationId: est.id, nombre: est.nombre, id: est.id, lluviaTxt: mmTxt, tempTxt: tempTxt,
+        stationId: est.id, nombre: est.nombre, id: est.id,
+        lluviaTxt: `Lluvia ahora: ${rateTxt}<br>Acumulado hoy: ${mmTxt}`, tempTxt: tempTxt,
       });
       markersLayer.add(graphic);
 
       // Parpadea SOLO si esta lloviendo ahora mismo (precipRate > 0), no
-      // por tener lluvia acumulada del dia — una estacion puede tener
-      // lluvia_mm > 0 porque llovio temprano y ya estar despejada.
-      if (est.lluvia_rate > 0) nuevosParpadeando.push(graphic);
-
-      if (est.lluvia_mm > 0) {
-        const intensidad = Math.min(est.lluvia_mm, HEATMAP_MM_MAX);
+      // por tener lluvia acumulada del dia.
+      if (est.lluvia_rate > 0) {
+        nuevosParpadeando.push(graphic);
+        const intensidad = Math.min(est.lluvia_rate, HEATMAP_RATE_MAX);
         const gHeat = new Graphic(punto, null, { lluvia: intensidad });
         heatGraphics.push(gHeat);
       }
@@ -1071,7 +1131,7 @@ async function fetchMapaLluvias() {
 
     if (heatGraphics.length) {
       heatLayer.setRenderer(new HeatmapRenderer({
-        field: 'lluvia', blurRadius: 25, maxPixelIntensity: HEATMAP_MM_MAX, minPixelIntensity: 0,
+        field: 'lluvia', blurRadius: 25, maxPixelIntensity: HEATMAP_RATE_MAX, minPixelIntensity: 0,
       }));
       heatGraphics.forEach(g => heatLayer.add(g));
     }
@@ -1225,3 +1285,4 @@ setInterval(fetchForecast,         15 * 60_000);
 setInterval(fetchAnalisisHistorico, 10 * 60_000);
 setInterval(fetchResumenSemana,     10 * 60_000);
 setInterval(fetchMapaLluvias,        5 * 60_000);
+setInterval(loadSatelliteLayer,     10 * 60_000);  // refresca la imagen de nubes (GIBS publica cada 10 min)

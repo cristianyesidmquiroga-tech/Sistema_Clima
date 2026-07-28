@@ -595,6 +595,15 @@ body {
   user-select: none;
 }
 .gw-radar-toggle input { cursor: pointer; }
+.gw-radar-toggle select {
+  background: rgba(0,0,0,0.2);
+  color: var(--text-primary);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
 
 .gw-rain-map-wrap {
   display: flex;
