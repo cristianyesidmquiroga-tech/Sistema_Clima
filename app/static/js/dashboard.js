@@ -687,6 +687,32 @@ async function fetchForecast() {
 let historyChart = null;
 let historyTipo  = 'dias';
 
+// Resumen de la ultima semana con extremos REALES (no el promedio de
+// los promedios diarios, que suaviza los picos de calor/frio del dia).
+async function fetchResumenSemana() {
+  const analysisEl = document.getElementById('gwHistoryAnalysis');
+  if (!analysisEl) return;
+  try {
+    const res = await fetch('/api/analisis/semana');
+    const r = await res.json();
+    if (r.temp_max == null) { analysisEl.style.display = 'none'; return; }
+
+    const tMax = convertTemp(r.temp_max), tMin = convertTemp(r.temp_min), tAvg = convertTemp(r.temp_avg);
+    const u = tempLabel();
+
+    analysisEl.innerHTML = `
+      <strong>Análisis de la última semana:</strong><br>
+      🌡️ Temp: Prom ${tAvg}${u} (Máx: ${tMax}${u}, Mín: ${tMin}${u})<br>
+      💧 Humedad: Máx ${r.humedad_max ?? '--'}%, Mín ${r.humedad_min ?? '--'}%<br>
+      💨 Viento: Máx ${r.viento_max ?? '--'} km/h, Mín ${r.viento_min ?? '--'} km/h<br>
+      🌧️ Lluvia Acumulada: ${r.lluvia_semana ?? '--'} mm
+    `;
+    analysisEl.style.display = 'block';
+  } catch (e) {
+    console.error('Error cargando resumen semanal', e);
+  }
+}
+
 async function fetchAnalisisHistorico() {
   try {
     const res  = await fetch(`/api/analisis?tipo=${historyTipo}`);
@@ -696,38 +722,6 @@ async function fetchAnalisisHistorico() {
     if (!data.length) return;
 
     const textColor = getChartTextColor();
-    
-    // Generar análisis de texto
-    const analysisEl = document.getElementById('gwHistoryAnalysis');
-    if (analysisEl) {
-      if (data.length > 0) {
-        let sumTemp = 0, maxTemp = -999, minTemp = 999;
-        let sumLluvia = 0;
-        data.forEach(d => {
-          const t = parseFloat(d.temp_avg) || 0;
-          sumTemp += t;
-          if(t > maxTemp) maxTemp = t;
-          if(t < minTemp) minTemp = t;
-          sumLluvia += parseFloat(d.lluvia) || 0;
-        });
-        const avgTemp = (sumTemp / data.length).toFixed(1);
-        sumLluvia = sumLluvia.toFixed(1);
-        
-        let labelTipo = historyTipo === 'dias' ? 'los últimos días'
-          : historyTipo === 'semanas' ? 'las últimas semanas'
-          : historyTipo === 'meses' ? 'los últimos meses'
-          : 'los últimos años';
-        
-        analysisEl.innerHTML = `
-          <strong>Análisis de ${labelTipo}:</strong><br>
-          🌡️ Temp. Promedio: ${avgTemp}°C (Máx: ${maxTemp.toFixed(1)}°C, Mín: ${minTemp.toFixed(1)}°C)<br>
-          🌧️ Lluvia Acumulada: ${sumLluvia} mm
-        `;
-        analysisEl.style.display = 'block';
-      } else {
-        analysisEl.style.display = 'none';
-      }
-    }
 
     const labels  = data.map(d => d.fecha).reverse();
     const temps   = data.map(d => convertTemp(d.temp_avg)).reverse();
@@ -800,6 +794,7 @@ function switchTempUnit(unit) {
   renderMainChart();
   fetchForecast();
   fetchAnalisisHistorico();
+  fetchResumenSemana();
 }
 
 // Clic en el reloj (inline) para cambiar formato de hora
@@ -1018,6 +1013,22 @@ function crearSimboloTriangulo(color) {
   );
 }
 
+// ─── PARPADEO DE ESTACIONES CON LLUVIA ACTIVA AHORA MISMO ─────
+let graficosParpadeando = [];
+let parpadeoIniciado = false;
+let parpadeoVisible = true;
+
+function iniciarParpadeoEstaciones() {
+  if (parpadeoIniciado) return;
+  parpadeoIniciado = true;
+  setInterval(() => {
+    parpadeoVisible = !parpadeoVisible;
+    graficosParpadeando.forEach(g => {
+      if (parpadeoVisible) g.show(); else g.hide();
+    });
+  }, 550);
+}
+
 async function fetchMapaLluvias() {
   if (!rainMap || !markersLayer || !esriMods) return;
   try {
@@ -1030,6 +1041,7 @@ async function fetchMapaLluvias() {
 
     const wgs84 = new SpatialReference({ wkid: 4326 });
     const heatGraphics = [];
+    const nuevosParpadeando = [];
 
     data.forEach(est => {
       if (est.lat == null || est.lon == null) return;
@@ -1042,12 +1054,20 @@ async function fetchMapaLluvias() {
       });
       markersLayer.add(graphic);
 
+      // Parpadea SOLO si esta lloviendo ahora mismo (precipRate > 0), no
+      // por tener lluvia acumulada del dia — una estacion puede tener
+      // lluvia_mm > 0 porque llovio temprano y ya estar despejada.
+      if (est.lluvia_rate > 0) nuevosParpadeando.push(graphic);
+
       if (est.lluvia_mm > 0) {
         const intensidad = Math.min(est.lluvia_mm, HEATMAP_MM_MAX);
         const gHeat = new Graphic(punto, null, { lluvia: intensidad });
         heatGraphics.push(gHeat);
       }
     });
+
+    graficosParpadeando = nuevosParpadeando;
+    iniciarParpadeoEstaciones();
 
     if (heatGraphics.length) {
       heatLayer.setRenderer(new HeatmapRenderer({
@@ -1195,6 +1215,7 @@ fetchRealTime();
 fetchHistory();
 fetchForecast();
 fetchAnalisisHistorico();
+fetchResumenSemana();
 initRainMap();
 fetchMapaLluvias();
 
@@ -1202,4 +1223,5 @@ setInterval(fetchRealTime,                30_000);
 setInterval(fetchHistory,           5 * 60_000);
 setInterval(fetchForecast,         15 * 60_000);
 setInterval(fetchAnalisisHistorico, 10 * 60_000);
+setInterval(fetchResumenSemana,     10 * 60_000);
 setInterval(fetchMapaLluvias,        5 * 60_000);

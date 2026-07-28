@@ -10,7 +10,7 @@ from app.models.models import (
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango,
     obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente,
-    obtener_historial_estacion
+    obtener_historial_estacion, obtener_resumen_semana
 )
 from datetime import datetime
 
@@ -271,6 +271,11 @@ def api_mapa_lluvias():
                 "lon": obs.get("lon"),
                 "lluvia_mm": lluvia_mm,
                 "nivel": _nivel_lluvia(lluvia_mm),
+                # Tasa de lluvia AHORA MISMO (distinta del acumulado del
+                # dia): una estacion puede tener lluvia_mm > 0 porque
+                # llovio en la manana y ya estar despejada. El parpadeo
+                # de "lloviendo ahora" en el mapa se decide con esto.
+                "lluvia_rate": metric.get("precipRate"),
                 "temp": metric.get("temp"),
                 "humedad": obs.get("humidity"),
                 "viento": metric.get("windSpeed"),
@@ -305,6 +310,12 @@ def api_analisis():
         return jsonify({"error": "tipo invalido"}), 400
     datos = obtener_analisis_historico(tipo)
     return jsonify(datos)
+
+@bp.route('/api/analisis/semana')
+@limiter.limit("80 per hour")
+@cache.cached(timeout=300)
+def api_analisis_semana():
+    return jsonify(obtener_resumen_semana())
 
 @bp.route('/api/fecha')
 @limiter.limit("80 per hour")

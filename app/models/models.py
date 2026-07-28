@@ -478,6 +478,47 @@ def obtener_datos_por_fecha(fecha_str):
     }
 
 
+def obtener_resumen_semana():
+    """Extremos REALES (no promedio de promedios) de temperatura, humedad
+    y viento de los ultimos 7 dias, consultando directo las lecturas
+    crudas. La lluvia se suma por dia (lluvia_dia es un acumulado diario,
+    no hay que promediarlo ni tomar el maximo global)."""
+    limite = datetime.utcnow() - timedelta(days=7)
+    try:
+        extremos = db.session.query(
+            func.max(Lectura.temp_exterior).label('temp_max'),
+            func.min(Lectura.temp_exterior).label('temp_min'),
+            func.avg(Lectura.temp_exterior).label('temp_avg'),
+            func.max(Lectura.humedad_exterior).label('humedad_max'),
+            func.min(Lectura.humedad_exterior).label('humedad_min'),
+            func.max(Lectura.velocidad_viento).label('viento_max'),
+            func.min(Lectura.velocidad_viento).label('viento_min'),
+        ).filter(Lectura.timestamp >= limite).one()
+
+        lluvia_por_dia = db.session.query(
+            func.to_char(Lectura.timestamp, 'YYYY-MM-DD').label('fecha'),
+            func.max(Lectura.lluvia_dia).label('lluvia_dia_max')
+        ).filter(Lectura.timestamp >= limite).group_by('fecha').all()
+        lluvia_semana = sum((fila.lluvia_dia_max or 0) for fila in lluvia_por_dia)
+
+        def r(v):
+            return round(v, 1) if v is not None else None
+
+        return {
+            'temp_max': r(extremos.temp_max),
+            'temp_min': r(extremos.temp_min),
+            'temp_avg': r(extremos.temp_avg),
+            'humedad_max': r(extremos.humedad_max),
+            'humedad_min': r(extremos.humedad_min),
+            'viento_max': r(extremos.viento_max),
+            'viento_min': r(extremos.viento_min),
+            'lluvia_semana': r(lluvia_semana),
+        }
+    except Exception as e:
+        print(f"Error resumen semana: {e}")
+        return {}
+
+
 def obtener_analisis_historico(tipo="dias"):
     try:
         if tipo == "dias":
