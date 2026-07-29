@@ -873,7 +873,6 @@ let rainMap = null;
 let esriMods = null;   // referencias a las clases de ArcGIS ya cargadas
 let markersLayer = null;
 let heatLayer = null;
-let radarLayer = null;
 
 // Techo de intensidad para el heatmap, en mm/h (tasa actual, no
 // acumulado del dia). Es una interpolacion entre las 6 estaciones, no
@@ -918,7 +917,6 @@ function initRainMap() {
     function alMapaListo() {
       rainMap.addLayer(heatLayer);
       rainMap.addLayer(markersLayer);
-      loadRadarLayer();
       loadSatelliteLayer();
       fetchMapaLluvias();
     }
@@ -929,30 +927,17 @@ function initRainMap() {
     if (rainMap.loaded) alMapaListo();
     else rainMap.on("load", alMapaListo);
 
-    const toggle = document.getElementById('gwRadarToggle');
-    if (toggle) toggle.addEventListener('change', actualizarVisibilidadRadar);
-
     const satSelect = document.getElementById('gwSatSelect');
-    if (satSelect) {
-      satSelect.addEventListener('change', () => {
-        if (satSelect.value === 'off') {
-          if (satLayer) satLayer.setVisibility(false);
-        } else {
-          loadSatelliteLayer();  // recrea la capa con el tipo elegido
-        }
-      });
-    }
+    if (satSelect) satSelect.addEventListener('change', loadSatelliteLayer);
   });
 }
 
-const RADAR_MAX_ZOOM = 7;  // RainViewer no tiene tiles reales mas alla de este nivel
-
-function actualizarVisibilidadRadar() {
-  if (!radarLayer || !rainMap) return;
-  const toggle = document.getElementById('gwRadarToggle');
-  const activado = !toggle || toggle.checked;
-  radarLayer.setVisibility(activado && rainMap.getZoom() <= RADAR_MAX_ZOOM);
-}
+// En vez de esconder la capa cuando el zoom pasa el maximo real (que
+// Se probo "estirar" el ultimo tile disponible mas alla del zoom
+// nativo, pero WebTiledLayer no lo escala de verdad: repite la imagen
+// completa en cada casillero, dando un patron de cuadricula repetida y
+// confuso (peor que no mostrar nada). Por eso directamente se esconde
+// la capa pasado el zoom real que tiene el satelite/radar.
 
 // ─── LIMITES DE MUNICIPIOS (Velez, Guavata, Barbosa, Puente Nacional) ──
 // Datos reales de OpenStreetMap (Nominatim), guardados una sola vez en
@@ -989,33 +974,6 @@ async function cargarLimitesMunicipios() {
   }
 }
 
-// ─── RADAR REAL (RainViewer, gratis para uso personal/educativo) ──
-async function loadRadarLayer() {
-  if (!esriMods) return;
-  try {
-    const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-    const data = await res.json();
-    const frames = data.radar && data.radar.past;
-    if (!frames || !frames.length) return;
-    const ultimo = frames[frames.length - 1];
-    const tileUrl = `${data.host}${ultimo.path}/256/\${level}/\${col}/\${row}/2/1_1.png`;
-    const toggle = document.getElementById('gwRadarToggle');
-    require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
-      radarLayer = new WebTiledLayer(tileUrl, { id: "radar", opacity: 0.6 });
-      rainMap.addLayer(radarLayer);
-      actualizarVisibilidadRadar();
-      // RainViewer solo tiene tiles reales hasta zoom ~7. WebTiledLayer
-      // (a diferencia de Leaflet) no tiene una opcion para "no pedir
-      // zooms que no existen", asi que en vez de mostrar el cartel de
-      // "Zoom Level Not Supported" lo ocultamos nosotros mismos cuando
-      // el zoom es mas cercano que eso.
-      rainMap.on("zoom-end", actualizarVisibilidadRadar);
-    });
-  } catch (e) {
-    console.error('Error cargando radar RainViewer', e);
-  }
-}
-
 // ─── NUBES REALES (satelite NASA GOES-East, gratis, sin API key) ──
 // GeoColor: se ve como una foto normal, buena para un vistazo rapido.
 // Band13 infrarrojo: mide temperatura de la punta de la nube (nubes
@@ -1028,31 +986,69 @@ const CAPAS_SATELITE = {
 let satLayer = null;
 let satMaxZoom = 7;
 
-function horaGibsMasReciente() {
-  // GIBS publica en pasos de 10 min; restamos 20 min de margen para
-  // asegurarnos de pedir un fotograma que ya este disponible.
-  const ahora = new Date(Date.now() - 20 * 60 * 1000);
-  ahora.setUTCSeconds(0, 0);
-  ahora.setUTCMinutes(Math.floor(ahora.getUTCMinutes() / 10) * 10);
-  return ahora.toISOString().replace(/\.\d+Z$/, 'Z');
+// Tile de referencia (nuestra zona) en cada TileMatrixSet, para probar
+// si un horario tiene datos reales antes de usarlo para todo el mapa.
+// Calculado para lon=-73.68, lat=5.96 (formula estandar de tile de
+// Web Mercator).
+const TILE_REGION = {
+  GoogleMapsCompatible_Level6: { level: 6, row: 30, col: 18 },
+  GoogleMapsCompatible_Level7: { level: 7, row: 61, col: 37 },
+};
+
+function horasGibsCandidatas() {
+  // GIBS publica en pasos de 10 min, pero a veces ese horario exacto
+  // corresponde a un escaneo parcial (solo Norteamerica) sin datos para
+  // nuestra zona. Probamos varios horarios recientes (hasta 1 hora
+  // atras) y usamos el primero que si tenga imagen real para nosotros.
+  const candidatos = [];
+  for (let atras = 20; atras <= 80; atras += 10) {
+    const t = new Date(Date.now() - atras * 60 * 1000);
+    t.setUTCSeconds(0, 0);
+    t.setUTCMinutes(Math.floor(t.getUTCMinutes() / 10) * 10);
+    candidatos.push(t.toISOString().replace(/\.\d+Z$/, 'Z'));
+  }
+  return candidatos;
+}
+
+async function probarHorario(cfg, tile, tiempo) {
+  const url = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/${tile.level}/${tile.row}/${tile.col}.png`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    // GIBS a veces responde 200 con una imagen "vacia" (transparente,
+    // muy chica) cuando no hay datos reales para ese tile puntual.
+    return blob.size > 2000 ? tiempo : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function encontrarHoraValida(cfg) {
+  const tile = TILE_REGION[cfg.tileMatrixSet];
+  // Se prueban todos los horarios candidatos al mismo tiempo (en vez de
+  // uno por uno) para que cambiar de capa se sienta instantaneo.
+  const candidatos = horasGibsCandidatas();
+  const resultados = await Promise.all(candidatos.map(t => probarHorario(cfg, tile, t)));
+  // El primer candidato es el mas reciente; nos quedamos con el mas
+  // reciente que si tuvo datos.
+  return resultados.find(t => t !== null) || null;
 }
 
 function actualizarVisibilidadSatelite() {
   if (!satLayer || !rainMap) return;
-  const select = document.getElementById('gwSatSelect');
-  const activado = select && select.value !== 'off';
-  satLayer.setVisibility(activado && rainMap.getZoom() <= satMaxZoom);
+  satLayer.setVisibility(rainMap.getZoom() <= satMaxZoom);
 }
 
-function loadSatelliteLayer() {
+async function loadSatelliteLayer() {
   if (!esriMods || !rainMap) return;
   const select = document.getElementById('gwSatSelect');
   const clave = select ? select.value : 'geocolor';
-  if (clave === 'off') return;
   const cfg = CAPAS_SATELITE[clave] || CAPAS_SATELITE.geocolor;
   satMaxZoom = cfg.maxZoom;
 
-  const tiempo = horaGibsMasReciente();
+  const tiempo = await encontrarHoraValida(cfg);
+  if (!tiempo) { console.warn('Sin horario valido de satelite NASA para esta zona ahora mismo'); return; }
   const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/\${level}/\${row}/\${col}.png`;
 
   require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
@@ -1284,5 +1280,5 @@ setInterval(fetchHistory,           5 * 60_000);
 setInterval(fetchForecast,         15 * 60_000);
 setInterval(fetchAnalisisHistorico, 10 * 60_000);
 setInterval(fetchResumenSemana,     10 * 60_000);
-setInterval(fetchMapaLluvias,        5 * 60_000);
+setInterval(fetchMapaLluvias,           90_000);
 setInterval(loadSatelliteLayer,     10 * 60_000);  // refresca la imagen de nubes (GIBS publica cada 10 min)

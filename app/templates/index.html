@@ -209,7 +209,7 @@
       <div class="gw-history-header">
         <h3 class="gw-history-title">🌧️ Lluvias en Tiempo Real — Olla del Río Suárez, Santander</h3>
       </div>
-      <p class="gw-rain-map-note">Datos de estaciones cercanas, pueden tener hasta ~20 min de retraso. Las manchas de color son una estimación por interpolación entre estaciones, no una imagen de radar real.</p>
+      <p class="gw-rain-map-note">Datos de estaciones cercanas, pueden tener hasta ~2-3 min de retraso. Las manchas de color son una estimación por interpolación entre estaciones, no una imagen de radar real.</p>
       <div class="gw-rain-summary" id="gwRainSummary">
         <div class="gw-rain-summary-item">
           <span class="gw-rain-summary-label">Temp. promedio</span>
@@ -229,13 +229,8 @@
         </div>
       </div>
       <label class="gw-radar-toggle">
-        <input type="checkbox" id="gwRadarToggle" checked>
-        Mostrar radar real (RainViewer) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo)
-      </label>
-      <label class="gw-radar-toggle">
-        Nubes (satélite NASA GOES) — solo visible si alejás el zoom:
+        Nubes (satélite NASA GOES) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo):
         <select id="gwSatSelect">
-          <option value="off">Apagado</option>
           <option value="geocolor" selected>Nubes normales (GeoColor)</option>
           <option value="infrared">Nubes infrarrojo (altura/tormenta)</option>
         </select>
@@ -262,6 +257,8 @@
           <span><strong>Estación fija:</strong> no registra lluvia en este momento.</span>
         </div>
         <p>Tocá un triángulo para ver su nombre, lluvia acumulada del día y temperatura, y se abre el historial completo con gráficos de las últimas 24h.</p>
+        <p><strong>Nubes normales (GeoColor):</strong> foto real del satélite, colores naturales — la más fácil de leer de un vistazo, buena para ver rápido dónde hay nubosidad.</p>
+        <p><strong>Nubes infrarrojo:</strong> mide la temperatura de la punta de la nube. Nubes muy frías (blancas/brillantes) suelen ser tormentas altas y fuertes; nubes tibias (grises) son nubosidad baja, sin mucha lluvia. Funciona igual de día y de noche.</p>
       </div>
     </section>
 
@@ -306,6 +303,6 @@
   <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=29"></script>
   <script src="/static/js/weather-fx.js?v=29"></script>
   <script src="https://js.arcgis.com/3.28/"></script>
-  <script src="/static/js/dashboard.js?v=46"></script>
+  <script src="/static/js/dashboard.js?v=48"></script>
 </body>
 </html>

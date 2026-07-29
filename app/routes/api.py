@@ -36,7 +36,7 @@ ESTACIONES_MAPA_LLUVIAS = [
     {"id": "IPUENT49", "nombre": "Puente Nacional"},
 ]
 
-CACHE_MAPA_LLUVIAS_TTL = 300  # 5 minutos, cacheado en Redis via @cache.cached
+CACHE_MAPA_LLUVIAS_TTL = 90  # segundos, cacheado en Redis via @cache.cached
 
 
 def _nivel_lluvia(mm_hr):
