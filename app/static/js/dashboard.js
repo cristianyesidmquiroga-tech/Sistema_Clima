@@ -986,13 +986,18 @@ const CAPAS_SATELITE = {
 let satLayer = null;
 let satMaxZoom = 7;
 
-// Tile de referencia (nuestra zona) en cada TileMatrixSet, para probar
-// si un horario tiene datos reales antes de usarlo para todo el mapa.
-// Calculado para lon=-73.68, lat=5.96 (formula estandar de tile de
-// Web Mercator).
-const TILE_REGION = {
-  GoogleMapsCompatible_Level6: { level: 6, row: 30, col: 18 },
-  GoogleMapsCompatible_Level7: { level: 7, row: 61, col: 37 },
+// Tiles de referencia (oeste/centro/este, cubriendo el ancho que se ve
+// al zoom minimo donde el satelite es visible) para probar si un
+// horario tiene datos reales en TODA la vista, no solo en un punto —
+// GOES a veces hace escaneos parciales que no cubren todo el continente
+// a la vez. Calculado con la formula estandar de tile de Web Mercator.
+const TILES_REGION = {
+  GoogleMapsCompatible_Level6: [
+    { level: 6, row: 30, col: 16 }, { level: 6, row: 30, col: 18 }, { level: 6, row: 30, col: 21 },
+  ],
+  GoogleMapsCompatible_Level7: [
+    { level: 7, row: 61, col: 33 }, { level: 7, row: 61, col: 37 }, { level: 7, row: 61, col: 42 },
+  ],
 };
 
 function horasGibsCandidatas() {
@@ -1010,28 +1015,36 @@ function horasGibsCandidatas() {
   return candidatos;
 }
 
-async function probarHorario(cfg, tile, tiempo) {
+async function tileTieneDatos(cfg, tile, tiempo) {
   const url = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/${tile.level}/${tile.row}/${tile.col}.png`;
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) return false;
     const blob = await res.blob();
     // GIBS a veces responde 200 con una imagen "vacia" (transparente,
     // muy chica) cuando no hay datos reales para ese tile puntual.
-    return blob.size > 2000 ? tiempo : null;
+    return blob.size > 2000;
   } catch (e) {
-    return null;
+    return false;
   }
 }
 
+async function probarHorario(cfg, tiles, tiempo) {
+  // Exige que TODOS los puntos de referencia (oeste/centro/este) tengan
+  // datos, no solo uno — evita quedarse con un horario de escaneo
+  // parcial que deja partes del mapa en blanco.
+  const resultados = await Promise.all(tiles.map(tile => tileTieneDatos(cfg, tile, tiempo)));
+  return resultados.every(ok => ok) ? tiempo : null;
+}
+
 async function encontrarHoraValida(cfg) {
-  const tile = TILE_REGION[cfg.tileMatrixSet];
+  const tiles = TILES_REGION[cfg.tileMatrixSet];
   // Se prueban todos los horarios candidatos al mismo tiempo (en vez de
   // uno por uno) para que cambiar de capa se sienta instantaneo.
   const candidatos = horasGibsCandidatas();
-  const resultados = await Promise.all(candidatos.map(t => probarHorario(cfg, tile, t)));
+  const resultados = await Promise.all(candidatos.map(t => probarHorario(cfg, tiles, t)));
   // El primer candidato es el mas reciente; nos quedamos con el mas
-  // reciente que si tuvo datos.
+  // reciente que si tuvo datos completos.
   return resultados.find(t => t !== null) || null;
 }
 
