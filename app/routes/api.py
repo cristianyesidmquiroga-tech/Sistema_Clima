@@ -1,7 +1,9 @@
 import os
 import io
+import uuid
 import hmac
 import requests
+from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
 from app import limiter, cache
@@ -10,18 +12,26 @@ from app.models.models import (
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
     obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango,
     obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente,
-    obtener_historial_estacion, obtener_resumen_semana
+    obtener_historial_estacion, obtener_resumen_semana,
+    obtener_noticias_hoy, crear_noticia
 )
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
 
+# ─── CONFIGURACION / CONSTANTES ───────────────────────────────
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
+ADMIN_PASSKEY = os.environ.get('ADMIN_PASSKEY', '')
 ENABLE_TEST_ENDPOINT = os.environ.get('ENABLE_TEST_ENDPOINT', 'false').lower() == 'true'
 WU_API_KEY = os.environ.get('WU_API_KEY', '')
 
 FINCA_LAT = 5.96
 FINCA_LON = -73.63
+
+DATOS_DESACTUALIZADOS_MIN = 15
+
+UPLOADS_NOTICIAS_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', 'noticias')
+EXTENSIONES_IMAGEN_VALIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 
 # Estaciones publicas de Wunderground para el mapa de lluvias de la region
 # (Guavata, Velez, Barbosa, Puente Nacional). No requieren ser propias:
@@ -35,10 +45,36 @@ ESTACIONES_MAPA_LLUVIAS = [
     {"id": "IVLEZ7",   "nombre": "Vélez 2"},
     {"id": "IPUENT49", "nombre": "Puente Nacional"},
 ]
-
 CACHE_MAPA_LLUVIAS_TTL = 90  # segundos, cacheado en Redis via @cache.cached
 
+COLUMNAS_EXPORTAR = [
+    ("timestamp", "Fecha/Hora (UTC)"),
+    ("temp_exterior", "Temp. Exterior (C)"),
+    ("humedad_exterior", "Humedad Exterior (%)"),
+    ("velocidad_viento", "Viento (km/h)"),
+    ("rafaga_viento", "Rafaga (km/h)"),
+    ("direccion_viento", "Direccion Viento (grados)"),
+    ("lluvia_hora", "Lluvia por hora (mm)"),
+    ("lluvia_dia", "Lluvia del dia (mm)"),
+    ("presion_relativa", "Presion Relativa (hPa)"),
+    ("uv_index", "Indice UV"),
+    ("radiacion_solar", "Radiacion Solar (W/m2)"),
+    ("punto_rocio", "Punto de Rocio (C)"),
+    ("sensacion_termica", "Sensacion Termica (C)"),
+]
 
+# Vistas de las fases 1-4 (aun no construidas) - placeholder para que el
+# menu no tenga enlaces rotos mientras se construyen una por una.
+VISTAS_EN_CONSTRUCCION = {
+    'reporte-velez': 'Reporte Vélez',
+    'rios': 'Ríos',
+    'cultivos': 'Cultivos',
+    'incendios': 'Incendios',
+    'riesgo-geologico': 'Riesgo Geológico',
+}
+
+
+# ─── HELPERS PRIVADOS ──────────────────────────────────────────
 def _nivel_lluvia(mm_hr):
     """Clasifica segun la TASA de lluvia actual (mm/h), no el acumulado
     del dia: asi que en cuanto para de llover, la estacion vuelve a
@@ -65,7 +101,6 @@ def _consultar_estacion_wu(station_id):
     r.raise_for_status()
     obs = (r.json().get("observations") or [None])[0]
     return obs
-DATOS_DESACTUALIZADOS_MIN = 15
 
 
 def obtener_estimado_open_meteo():
@@ -96,6 +131,7 @@ def obtener_estimado_open_meteo():
     except Exception:
         return None
 
+
 def get_moon_phase(date):
     """Calcula la fase lunar aproximada (0-7)"""
     year = date.year
@@ -115,6 +151,15 @@ def get_moon_phase(date):
     if b >= 8: b = 0
     return b
 
+
+def _crear_vista_pendiente(slug, titulo):
+    def vista():
+        return render_template('paginas/proximamente.html', activo=slug, titulo_vista=titulo)
+    vista.__name__ = f'vista_pendiente_{slug.replace("-", "_")}'
+    return vista
+
+
+# ─── INGESTA DE DATOS DE LA ESTACION PROPIA ────────────────────
 @bp.route('/data/report/', methods=['POST', 'GET'])
 @limiter.limit("120 per hour")
 def recibir_datos():
@@ -137,6 +182,8 @@ def recibir_datos():
     guardar_lectura(datos)
     return "OK", 200
 
+
+# ─── API: CLIMA Y ESTACION PROPIA ──────────────────────────────
 @bp.route('/api/actual')
 @limiter.limit("300 per hour")
 def api_actual():
@@ -194,22 +241,22 @@ def api_stats():
 @cache.cached(timeout=300)
 def api_stats_comparative():
     stats = obtener_stats_agrupadas()
-    
+
     analisis_texto = []
-    
+
     if len(stats["semanal"]) >= 2:
         lluvia_s1 = stats["semanal"][0]["lluvia_max_diaria"] or 0
         lluvia_s2 = stats["semanal"][1]["lluvia_max_diaria"] or 0
-        
+
         if lluvia_s1 > lluvia_s2:
             analisis_texto.append(f"En esta semana (Semana {stats['semanal'][0]['semana'].split('-')[1]}) ha llovido más que en la semana pasada.")
         elif lluvia_s1 < lluvia_s2:
             analisis_texto.append(f"La semana pasada llovió más que esta semana.")
-            
+
     if len(stats["mensual"]) >= 2:
         temp_m1 = stats["mensual"][0]["temp_max"] or 0
         temp_m2 = stats["mensual"][1]["temp_max"] or 0
-        
+
         if temp_m1 > temp_m2:
             analisis_texto.append(f"Este mes ha sido más caluroso que el mes anterior (Max {temp_m1}°C vs {temp_m2}°C).")
         elif temp_m1 < temp_m2:
@@ -248,10 +295,8 @@ def api_test():
     guardar_lectura(datos_prueba)
     return jsonify({"mensaje": "Datos de prueba guardados OK"})
 
-@bp.route('/')
-def dashboard():
-    return render_template('index.html')
 
+# ─── API: MAPA DE LLUVIAS Y ESTACIONES REGIONALES ──────────────
 @bp.route('/api/mapa_lluvias')
 @limiter.limit("60 per hour")
 @cache.cached(timeout=CACHE_MAPA_LLUVIAS_TTL)
@@ -306,6 +351,8 @@ def api_estacion_historial(station_id):
     datos = obtener_historial_estacion(station_id, dias)
     return jsonify(datos)
 
+
+# ─── API: ANALISIS HISTORICO Y EXPORTACION ─────────────────────
 @bp.route('/api/analisis')
 @limiter.limit("80 per hour")
 @cache.cached(timeout=300, query_string=True)
@@ -333,22 +380,6 @@ def api_fecha():
         return jsonify({"error": "Formato de fecha invalido, usa YYYY-MM-DD"}), 400
     return jsonify(datos)
 
-COLUMNAS_EXPORTAR = [
-    ("timestamp", "Fecha/Hora (UTC)"),
-    ("temp_exterior", "Temp. Exterior (C)"),
-    ("humedad_exterior", "Humedad Exterior (%)"),
-    ("velocidad_viento", "Viento (km/h)"),
-    ("rafaga_viento", "Rafaga (km/h)"),
-    ("direccion_viento", "Direccion Viento (grados)"),
-    ("lluvia_hora", "Lluvia por hora (mm)"),
-    ("lluvia_dia", "Lluvia del dia (mm)"),
-    ("presion_relativa", "Presion Relativa (hPa)"),
-    ("uv_index", "Indice UV"),
-    ("radiacion_solar", "Radiacion Solar (W/m2)"),
-    ("punto_rocio", "Punto de Rocio (C)"),
-    ("sensacion_termica", "Sensacion Termica (C)"),
-]
-
 @bp.route('/api/exportar')
 @limiter.limit("20 per hour")
 def api_exportar():
@@ -374,3 +405,72 @@ def api_exportar():
         download_name=nombre,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+# ─── API: NOTICIAS (publica) ───────────────────────────────────
+@bp.route('/api/noticias')
+@limiter.limit("120 per hour")
+@cache.cached(timeout=60)
+def api_noticias():
+    return jsonify(obtener_noticias_hoy())
+
+
+# ─── VISTAS DEL SITIO PUBLICO ───────────────────────────────────
+@bp.route('/')
+def inicio():
+    return render_template('paginas/inicio.html', activo='inicio')
+
+@bp.route('/mapa-estaciones')
+def mapa_estaciones():
+    # Mismo dashboard tecnico, con su propia URL dentro del nuevo menu del
+    # sitio. '/' es la landing publica; esta es la unica forma de llegar
+    # al mapa.
+    return render_template('paginas/index.html')
+
+@bp.route('/privacidad')
+def privacidad():
+    return render_template('legal/privacidad.html', activo='privacidad')
+
+@bp.route('/nosotros')
+def nosotros():
+    return render_template('paginas/proximamente.html', activo='nosotros', titulo_vista='Nosotros')
+
+for _slug, _titulo in VISTAS_EN_CONSTRUCCION.items():
+    bp.add_url_rule(f'/{_slug}', view_func=_crear_vista_pendiente(_slug, _titulo))
+
+
+# ─── ADMINISTRACION ─────────────────────────────────────────────
+@bp.route('/admin/noticias', methods=['GET', 'POST'])
+@limiter.limit("30 per hour", methods=["GET"])
+@limiter.limit("10 per hour", methods=["POST"])  # mas estricto: aca se prueba la clave
+def admin_noticias():
+    error = None
+    exito = False
+
+    if request.method == 'POST':
+        if not ADMIN_PASSKEY or not hmac.compare_digest(request.form.get('clave', ''), ADMIN_PASSKEY):
+            error = "Clave incorrecta."
+        else:
+            titulo = (request.form.get('titulo') or '').strip()
+            texto = (request.form.get('texto') or '').strip()
+            tipo = request.form.get('tipo') if request.form.get('tipo') in ('informativa', 'alerta') else 'informativa'
+            if not titulo or not texto:
+                error = "Falta el título o el texto."
+            else:
+                imagen_url = None
+                archivo = request.files.get('imagen')
+                if archivo and archivo.filename:
+                    ext = os.path.splitext(archivo.filename)[1].lower()
+                    if ext not in EXTENSIONES_IMAGEN_VALIDAS:
+                        error = "Formato de imagen no soportado (usa jpg, png o webp)."
+                    else:
+                        os.makedirs(UPLOADS_NOTICIAS_DIR, exist_ok=True)
+                        nombre_archivo = f"{uuid.uuid4().hex}{ext}"
+                        archivo.save(os.path.join(UPLOADS_NOTICIAS_DIR, secure_filename(nombre_archivo)))
+                        imagen_url = f"/static/uploads/noticias/{nombre_archivo}"
+                if not error:
+                    crear_noticia(tipo, titulo, texto, imagen_url)
+                    exito = True
+
+    noticias = obtener_noticias_hoy()
+    return render_template('admin/noticias.html', error=error, exito=exito, noticias=noticias)

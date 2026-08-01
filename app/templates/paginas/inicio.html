@@ -1,0 +1,81 @@
+{% extends "_base.html" %}
+{% block titulo %}nuestroclima.co — Monitoreo Agroclimático de la Provincia de Vélez{% endblock %}
+{% block css_extra %}<link rel="stylesheet" href="/static/css/site/inicio.css?v=1">{% endblock %}
+{% block contenido %}
+
+<section class="gwi-hero">
+  <h1>Información agroclimática real, para quienes cultivan la Provincia de Vélez.</h1>
+  <p>
+    Clima, lluvia y ríos en tiempo real de estaciones propias, cruzados con lo que se cultiva en
+    cada municipio — para que cafeteros, paneleros y guayaberos de la provincia tengan datos
+    reales, no promedios nacionales genéricos.
+  </p>
+</section>
+
+<section class="gwi-relato">
+  <div>
+    <h2>Cómo empezó</h2>
+    <p>Nació como el clima de una sola finca. Al ver cuánto valor tenía ese dato para los vecinos, se convirtió en un sistema para toda la Provincia de Vélez.</p>
+  </div>
+  <div>
+    <h2>Hacia dónde va</h2>
+    <p>De la provincia a todo Santander, y después a otros departamentos de Colombia — siempre con datos reales de la zona, nunca genéricos.</p>
+  </div>
+  <div>
+    <h2>Impacto</h2>
+    <p>Decisiones de siembra, cosecha y abono con información real ayudan a que el campo colombiano produzca más y pierda menos ante el clima.</p>
+  </div>
+</section>
+
+<section class="gwi-carrusel-wrap">
+  <h2 class="gwi-titulo-seccion">Lo que puedes consultar</h2>
+  <div class="gwi-carrusel" id="gwiCarrusel">
+    <div class="gwi-slide activa" data-color="verde">
+      <div class="gwi-slide-img" style="background:var(--verde-soft);color:var(--verde);">Mapa de Estaciones</div>
+      <h3>Mapa de Estaciones</h3>
+      <p>Clima y lluvia en vivo de las estaciones propias y de IDEAM en toda la provincia.</p>
+      <a href="/mapa-estaciones">Consultar →</a>
+    </div>
+    <div class="gwi-slide" data-color="rio">
+      <div class="gwi-slide-img" style="background:var(--rio-soft);color:var(--rio);">Reporte Vélez</div>
+      <h3>Reporte Vélez</h3>
+      <p>Resumen semanal de clima, lluvia y alertas hidrológicas de los ríos de la provincia.</p>
+      <a href="/reporte-velez">Consultar →</a>
+    </div>
+    <div class="gwi-slide" data-color="rio">
+      <div class="gwi-slide-img" style="background:var(--rio-soft);color:var(--rio);">Ríos</div>
+      <h3>Ríos y quebradas</h3>
+      <p>Cada afluente con su nombre, por municipio, sobre el mapa de la provincia.</p>
+      <a href="/rios">Consultar →</a>
+    </div>
+    <div class="gwi-slide" data-color="tierra">
+      <div class="gwi-slide-img" style="background:#f1e7dc;color:var(--tierra);">Cultivos</div>
+      <h3>Cultivos por municipio</h3>
+      <p>Qué se siembra en cada uno de los 19 municipios, con el detalle por vereda.</p>
+      <a href="/cultivos">Consultar →</a>
+    </div>
+    <div class="gwi-slide" data-color="naranja">
+      <div class="gwi-slide-img" style="background:#fbe8da;color:var(--alerta-naranja);">Incendios</div>
+      <h3>Incendios activos</h3>
+      <p>Focos de calor detectados por satélite en tiempo real sobre la provincia.</p>
+      <a href="/incendios">Consultar →</a>
+    </div>
+    <div class="gwi-slide" data-color="tierra">
+      <div class="gwi-slide-img" style="background:#f1e7dc;color:var(--tierra);">Riesgo Geológico</div>
+      <h3>Riesgo geológico</h3>
+      <p>Zonas con historial de deslizamiento y el estado actual de las vías afectadas.</p>
+      <a href="/riesgo-geologico">Consultar →</a>
+    </div>
+  </div>
+  <div class="gwi-puntos" id="gwiPuntos"></div>
+</section>
+
+<section class="gwi-noticias-wrap">
+  <h2 class="gwi-titulo-seccion">Noticias de hoy</h2>
+  <div class="gwi-noticias" id="gwiNoticias">
+    <p class="gwi-noticias-vacio">Cargando…</p>
+  </div>
+</section>
+
+{% endblock %}
+{% block js_extra %}<script src="/static/js/site/inicio.js?v=1"></script>{% endblock %}

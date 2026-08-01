@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, redirect
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -51,6 +51,39 @@ def create_app():
     def limite_excedido(e):
         return jsonify({"error": "Demasiadas peticiones, intenta mas tarde"}), 403
 
+    @app.errorhandler(404)
+    def pagina_no_encontrada(e):
+        if request.path.startswith('/api/'):
+            return jsonify({"error": "No encontrado"}), 404
+        return render_template('errores/404.html'), 404
+
+    @app.errorhandler(500)
+    def error_servidor(e):
+        if request.path.startswith('/api/'):
+            return jsonify({"error": "Error interno del servidor"}), 500
+        return render_template('errores/500.html'), 500
+
+    # nuestroclima.co (sin www) siempre redirige a www.nuestroclima.co,
+    # que es la version canonica del sitio. Solo aplica a ese dominio
+    # exacto, para no afectar localhost/desarrollo local.
+    @app.before_request
+    def _forzar_www():
+        if request.host.split(':')[0] == 'nuestroclima.co':
+            destino = f"https://www.nuestroclima.co{request.path}"
+            if request.query_string:
+                destino += f"?{request.query_string.decode()}"
+            return redirect(destino, code=301)
+
+    # Modo mantenimiento: se activa con MODO_MANTENIMIENTO=true (sin
+    # necesidad de detener el servidor ni tocar codigo). Deja pasar
+    # /static/ para que la propia pagina de mantenimiento cargue su CSS
+    # y fuentes.
+    @app.before_request
+    def _revisar_mantenimiento():
+        if os.environ.get('MODO_MANTENIMIENTO', 'false').lower() == 'true' \
+                and not request.path.startswith('/static/'):
+            return render_template('mantenimiento/mantenimiento.html'), 503
+
     # CORS: restringido al/los origenes permitidos por ALLOWED_ORIGINS
     # (separados por coma). Si no se define, no se habilita CORS
     # (el dashboard es same-origin, no lo necesita).
@@ -76,7 +109,7 @@ def create_app():
         'pool_pre_ping': True,
         'pool_recycle': 280,
     }
-    app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1 MB
+    app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5 MB (deja espacio para imagenes de noticias)
 
     db.init_app(app)
 
@@ -92,6 +125,11 @@ def create_app():
             # la app: la tabla igual queda creada por el otro proceso.
             print(f"[DB] Aviso creando tablas (probable carrera entre workers): {e}")
             db.session.rollback()
+
+    @app.context_processor
+    def _inyectar_anio():
+        from datetime import datetime
+        return {"anio_actual": datetime.utcnow().year}
 
     @app.after_request
     def set_security_headers(response):

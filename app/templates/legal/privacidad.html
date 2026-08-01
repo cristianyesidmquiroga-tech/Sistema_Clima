@@ -1,0 +1,57 @@
+{% extends "_base.html" %}
+{% block titulo %}Política de privacidad — nuestroclima.co{% endblock %}
+{% block main_clase %} lectura{% endblock %}
+{% block contenido %}
+  <h1 style="font-size:26px;font-weight:700;margin:0 0 6px;">Política de privacidad y cookies</h1>
+  <p style="color:var(--ink-soft);font-size:13px;margin:0 0 32px;">Última actualización: {{ anio_actual }}</p>
+
+  <section style="margin-bottom:32px;">
+    <h2 style="font-size:16px;font-weight:700;margin:0 0 10px;">1. Qué datos recolectamos</h2>
+    <p style="font-size:14.5px;line-height:1.7;color:var(--ink);">
+      nuestroclima.co no pide registro ni cuenta para consultar la información pública del sitio.
+      Lo único que se recolecta al navegar es información técnica estándar de cualquier sitio web
+      (dirección IP, tipo de navegador, páginas visitadas) con fines de seguridad y para evitar el
+      uso abusivo del servicio — no se vende ni se comparte con terceros con fines comerciales.
+    </p>
+  </section>
+
+  <section id="cookies" style="margin-bottom:32px;">
+    <h2 style="font-size:16px;font-weight:700;margin:0 0 10px;">2. Cookies</h2>
+    <p style="font-size:14.5px;line-height:1.7;color:var(--ink);">
+      Usamos una cookie/almacenamiento local propio para recordar si aceptaste o rechazaste el
+      banner de cookies, y para preferencias del sitio (como unidades de temperatura u hora). No
+      usamos cookies de rastreo publicitario de terceros. Puedes borrar esta preferencia en
+      cualquier momento desde la configuración de tu navegador.
+    </p>
+  </section>
+
+  <section id="terminos" style="margin-bottom:32px;">
+    <h2 style="font-size:16px;font-weight:700;margin:0 0 10px;">3. Términos y condiciones de uso</h2>
+    <p style="font-size:14.5px;line-height:1.7;color:var(--ink);">
+      La información publicada (clima, hidrología, cultivos y demás) se ofrece con fines
+      informativos para la comunidad de la Provincia de Vélez, construida a partir de estaciones
+      propias y fuentes públicas oficiales. No debe usarse como única fuente para decisiones de
+      seguridad ante emergencias — para eso, consulta siempre a las autoridades oficiales
+      (IDEAM, UNGRD, tu alcaldía municipal).
+    </p>
+  </section>
+
+  <section id="copyright" style="margin-bottom:32px;">
+    <h2 style="font-size:16px;font-weight:700;margin:0 0 10px;">4. Derechos de autor</h2>
+    <p style="font-size:14.5px;line-height:1.7;color:var(--ink);">
+      © Sistema de Monitoreo Agroclimático — Provincia de Vélez, {{ anio_actual }}. El contenido,
+      diseño, marca "nuestroclima.co" y los análisis propios de este sitio no pueden reproducirse
+      ni redistribuirse sin autorización. Los mapas/imágenes descargables incluyen una marca de
+      agua identificando su origen.
+    </p>
+  </section>
+
+  <section>
+    <h2 style="font-size:16px;font-weight:700;margin:0 0 10px;">5. Ley aplicable</h2>
+    <p style="font-size:14.5px;line-height:1.7;color:var(--ink);">
+      Esta política se rige por la Ley 1581 de 2012 de Colombia (Protección de Datos Personales /
+      Habeas Data). Para cualquier solicitud sobre tus datos, escríbenos a través de la sección
+      <a href="/nosotros">Nosotros</a>.
+    </p>
+  </section>
+{% endblock %}

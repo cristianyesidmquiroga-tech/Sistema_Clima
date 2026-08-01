@@ -1,10 +1,13 @@
 import math
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
+from sqlalchemy.orm import validates
 from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
+
+# ─── MODELOS (tablas) ──────────────────────────────────────────
 class Lectura(db.Model):
     __tablename__ = 'lecturas'
     id = db.Column(db.Integer, primary_key=True)
@@ -131,52 +134,38 @@ class HistorialEstacion(db.Model):
         }
 
 
-def guardar_historial_estacion(station_id, obs):
-    """Guarda (o actualiza si ya existe) una observacion horaria de una
-    estacion externa de Wunderground. `obs` es el dict que devuelve la
-    API de WU en metric (temp, humidity, windspeed, etc en metric)."""
-    metric = obs.get('metric', {})
-    ts_str = obs.get('obsTimeUtc')
-    if not ts_str:
-        return False
-    ts = datetime.fromisoformat(ts_str.replace('Z', '+00:00')).replace(tzinfo=None)
+class Noticia(db.Model):
+    """
+    Noticias del dia para la provincia (landing publica). Se suben a
+    diario y se borran al terminar el dia (ver limpiar_noticias_viejas)
+    para no acumular en la base de datos.
+    """
+    __tablename__ = 'noticias'
+    id = db.Column(db.Integer, primary_key=True)
+    tipo = db.Column(db.String(20), nullable=False, default='informativa')  # informativa | alerta
+    titulo = db.Column(db.String(160), nullable=False)
+    texto = db.Column(db.Text, nullable=False)
+    imagen_url = db.Column(db.String(300))
+    fecha_publicacion = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, index=True)
 
-    existente = HistorialEstacion.query.filter_by(station_id=station_id, timestamp=ts).first()
-    fila = existente or HistorialEstacion(station_id=station_id, timestamp=ts)
+    @validates('tipo')
+    def _validar_tipo(self, key, valor):
+        if valor not in ('informativa', 'alerta'):
+            raise ValueError(f"tipo de noticia invalido: {valor!r}")
+        return valor
 
-    fila.temp_avg = metric.get('tempAvg')
-    fila.temp_max = metric.get('tempHigh')
-    fila.temp_min = metric.get('tempLow')
-    fila.dewpt_avg = metric.get('dewptAvg')
-    fila.humedad_avg = obs.get('humidityAvg')
-    fila.humedad_max = obs.get('humidityHigh')
-    fila.humedad_min = obs.get('humidityLow')
-    fila.viento_avg = metric.get('windspeedAvg')
-    fila.viento_max = metric.get('windspeedHigh')
-    fila.rafaga_max = metric.get('windgustHigh')
-    fila.direccion_viento_avg = obs.get('winddirAvg')
-    fila.lluvia_mm = metric.get('precipTotal')
-    fila.lluvia_rate_max = metric.get('precipRate')
-    fila.presion_max = metric.get('pressureMax')
-    fila.presion_min = metric.get('pressureMin')
-    fila.radiacion_solar_max = obs.get('solarRadiationHigh')
-    fila.uv_max = obs.get('uvHigh')
-
-    if not existente:
-        db.session.add(fila)
-    db.session.commit()
-    return True
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'tipo': self.tipo,
+            'titulo': self.titulo,
+            'texto': self.texto,
+            'imagen_url': self.imagen_url,
+            'fecha_publicacion': self.fecha_publicacion.isoformat() + "Z" if self.fecha_publicacion else None,
+        }
 
 
-def obtener_historial_estacion(station_id, dias=1):
-    limite = datetime.utcnow() - timedelta(days=dias)
-    filas = HistorialEstacion.query.filter(
-        HistorialEstacion.station_id == station_id,
-        HistorialEstacion.timestamp >= limite
-    ).order_by(HistorialEstacion.timestamp.asc()).all()
-    return [f.to_dict() for f in filas]
-
-
+# ─── UTILIDADES DE CONVERSION Y CALIBRACION ────────────────────
 def fahrenheit_a_celsius(f):
     if f is None:
         return None
@@ -297,13 +286,15 @@ def absoluta_a_relativa(hpa, altitud_m=1800):
     except Exception:
         return None
 
+
+# ─── LECTURAS PROPIAS: ESCRITURA ────────────────────────────────
 def guardar_lectura(datos_raw):
     try:
         temp_ext_raw = fahrenheit_a_celsius(datos_raw.get('tempf'))
         radiacion_solar = datos_raw.get('solarradiation')
         viento_vel = mph_a_kmh(datos_raw.get('windspeedmph'))
         sensacion_raw = fahrenheit_a_celsius(get_field(datos_raw, 'feelslikef', 'feelslike'))
-        
+
         temp_ext_calibrada = aplicar_compensacion_termica(temp_ext_raw, radiacion_solar, viento_vel)
 
         offset_aplicado = (temp_ext_raw - temp_ext_calibrada) if (temp_ext_raw and temp_ext_calibrada) else 0
@@ -329,7 +320,7 @@ def guardar_lectura(datos_raw):
             sensacion_termica=sensacion_calibrada,
             passkey=datos_raw.get('PASSKEY', 'desconocido')
         )
-        
+
         db.session.add(nueva_lectura)
         db.session.commit()
         print(f"[DB] Lectura guardada OK")
@@ -338,6 +329,7 @@ def guardar_lectura(datos_raw):
         print(f"[DB] Error guardando: {e}")
 
 
+# ─── LECTURAS PROPIAS: CONSULTAS ────────────────────────────────
 def obtener_ultima_lectura():
     lectura = Lectura.query.order_by(Lectura.timestamp.desc()).first()
     return lectura.to_dict() if lectura else None
@@ -361,7 +353,7 @@ def obtener_stats_dia():
         func.max(Lectura.lluvia_dia).label('lluvia_total'),
         func.max(Lectura.uv_index).label('uv_max')
     ).filter(Lectura.timestamp >= limite).first()
-    
+
     if stats:
         return {
             'temp_max': stats.temp_max,
@@ -393,7 +385,7 @@ def obtener_stats_agrupadas():
         func.min(Lectura.temp_exterior).label('temp_min'),
         func.max(Lectura.lluvia_dia).label('lluvia_max_diaria')
     ).group_by('semana').order_by(func.to_char(Lectura.timestamp, 'IYYY-IW').desc()).limit(12).all()
-    
+
     return {
         "mensual": [
             {
@@ -547,8 +539,79 @@ def obtener_analisis_historico(tipo="dias"):
             ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY').desc()).limit(5).all()
         else:
             return []
-            
+
         return [{"fecha": q.fecha, "temp_avg": round(q.temp_avg, 1) if q.temp_avg else 0, "lluvia": q.lluvia_max or 0} for q in query]
     except Exception as e:
         print(f"Error historico: {e}")
         return []
+
+
+# ─── HISTORIAL DE ESTACIONES EXTERNAS: ESCRITURA ────────────────
+def guardar_historial_estacion(station_id, obs):
+    """Guarda (o actualiza si ya existe) una observacion horaria de una
+    estacion externa de Wunderground. `obs` es el dict que devuelve la
+    API de WU en metric (temp, humidity, windspeed, etc en metric)."""
+    metric = obs.get('metric', {})
+    ts_str = obs.get('obsTimeUtc')
+    if not ts_str:
+        return False
+    ts = datetime.fromisoformat(ts_str.replace('Z', '+00:00')).replace(tzinfo=None)
+
+    existente = HistorialEstacion.query.filter_by(station_id=station_id, timestamp=ts).first()
+    fila = existente or HistorialEstacion(station_id=station_id, timestamp=ts)
+
+    fila.temp_avg = metric.get('tempAvg')
+    fila.temp_max = metric.get('tempHigh')
+    fila.temp_min = metric.get('tempLow')
+    fila.dewpt_avg = metric.get('dewptAvg')
+    fila.humedad_avg = obs.get('humidityAvg')
+    fila.humedad_max = obs.get('humidityHigh')
+    fila.humedad_min = obs.get('humidityLow')
+    fila.viento_avg = metric.get('windspeedAvg')
+    fila.viento_max = metric.get('windspeedHigh')
+    fila.rafaga_max = metric.get('windgustHigh')
+    fila.direccion_viento_avg = obs.get('winddirAvg')
+    fila.lluvia_mm = metric.get('precipTotal')
+    fila.lluvia_rate_max = metric.get('precipRate')
+    fila.presion_max = metric.get('pressureMax')
+    fila.presion_min = metric.get('pressureMin')
+    fila.radiacion_solar_max = obs.get('solarRadiationHigh')
+    fila.uv_max = obs.get('uvHigh')
+
+    if not existente:
+        db.session.add(fila)
+    db.session.commit()
+    return True
+
+
+# ─── HISTORIAL DE ESTACIONES EXTERNAS: CONSULTA ─────────────────
+def obtener_historial_estacion(station_id, dias=1):
+    limite = datetime.utcnow() - timedelta(days=dias)
+    filas = HistorialEstacion.query.filter(
+        HistorialEstacion.station_id == station_id,
+        HistorialEstacion.timestamp >= limite
+    ).order_by(HistorialEstacion.timestamp.asc()).all()
+    return [f.to_dict() for f in filas]
+
+
+# ─── NOTICIAS: ESCRITURA ─────────────────────────────────────────
+def crear_noticia(tipo, titulo, texto, imagen_url=None):
+    noticia = Noticia(tipo=tipo, titulo=titulo, texto=texto, imagen_url=imagen_url)
+    db.session.add(noticia)
+    db.session.commit()
+    return noticia.to_dict()
+
+
+# ─── NOTICIAS: CONSULTA ───────────────────────────────────────────
+def limpiar_noticias_viejas():
+    """Borra noticias de dias anteriores a hoy (UTC). Se llama antes de
+    cada lectura, asi no hace falta un proceso aparte para esto."""
+    inicio_hoy = datetime.combine(datetime.utcnow().date(), datetime.min.time())
+    Noticia.query.filter(Noticia.fecha_publicacion < inicio_hoy).delete()
+    db.session.commit()
+
+
+def obtener_noticias_hoy():
+    limpiar_noticias_viejas()
+    filas = Noticia.query.order_by(Noticia.fecha_publicacion.desc()).all()
+    return [f.to_dict() for f in filas]

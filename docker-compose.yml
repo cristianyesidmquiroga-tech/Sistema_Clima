@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:18
@@ -46,6 +44,8 @@ services:
       STATION_PASSKEY: ${STATION_PASSKEY:-}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       ENABLE_TEST_ENDPOINT: ${ENABLE_TEST_ENDPOINT:-false}
+      MODO_MANTENIMIENTO: ${MODO_MANTENIMIENTO:-false}
+      ADMIN_PASSKEY: ${ADMIN_PASSKEY:-}
       WU_API_KEY: ${WU_API_KEY:-}
       LIMITE_HORA_COLOMBIA: ${LIMITE_HORA_COLOMBIA:-1000 per hour}
       LIMITE_HORA_EXTRANJERO: ${LIMITE_HORA_EXTRANJERO:-50 per hour}
@@ -80,6 +80,25 @@ services:
       STATION_PASSKEY: ${STATION_PASSKEY:-}
     depends_on:
       - app
+    mem_limit: 128m
+    cpus: 0.25
+
+  historial_poller:
+    build: .
+    container_name: clima_historial_poller
+    restart: unless-stopped
+    command: ["python", "scripts/historial_estaciones_poller.py"]
+    environment:
+      DB_USER: ${DB_USER:-clima}
+      DB_PASS: ${DB_PASS:-clima123}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+      WU_API_KEY: ${WU_API_KEY:-}
+      HISTORIAL_POLL_INTERVAL: ${HISTORIAL_POLL_INTERVAL:-1800}
+    depends_on:
+      db:
+        condition: service_healthy
     mem_limit: 128m
     cpus: 0.25
 

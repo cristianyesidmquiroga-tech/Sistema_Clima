@@ -1,0 +1,13 @@
+{% extends "_base.html" %}
+{% block titulo %}{{ titulo_vista }} — nuestroclima.co{% endblock %}
+{% block contenido %}
+  <div style="max-width:640px;margin:60px auto;text-align:center;">
+    <p style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--rio);font-weight:600;margin:0 0 10px;">{{ titulo_vista }}</p>
+    <h1 style="font-size:26px;font-weight:700;margin:0 0 14px;">Esta vista está en construcción</h1>
+    <p style="font-size:14.5px;color:var(--ink-soft);line-height:1.7;">
+      Estamos construyendo esta sección del sitio. Mientras tanto, puedes revisar lo que ya está
+      disponible en <a href="/mapa-estaciones">el mapa de estaciones</a> o en el
+      <a href="/">inicio</a>.
+    </p>
+  </div>
+{% endblock %}

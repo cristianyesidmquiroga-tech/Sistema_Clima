@@ -1,0 +1,113 @@
+/* dashboard/base.css — reset, variables, fondos y tarjeta contenedora */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Estas variables se redefinen en .gw-container segun el clima */
+  --divider:        rgba(255,255,255,0.15);
+  --card-bg:        rgba(255,255,255,0.1);
+  --container-bg:   rgba(28,30,34,0.82);
+}
+
+body {
+  font-family: 'Roboto', 'Arial', sans-serif;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 40px 0 60px;
+  background-color: #f5f5f5;
+  overflow-x: hidden;
+}
+
+.weather-canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scene-backdrop {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 1;
+}
+.scene-backdrop-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: 1;
+}
+.scene-backdrop-fade {
+  position: absolute;
+  inset: 0;
+  background: var(--container-bg);
+  transition: background-color 1s ease;
+}
+
+.gw-container {
+  --text-primary:   #ffffff;
+  --text-secondary: rgba(255,255,255,0.7);
+  --text-blue:      #8ab4f8;
+  --tab-accent:     #fbbc04;
+  --temp-color:     #ffffff;
+
+  background: var(--container-bg);
+  width: 100%;
+  max-width: 660px;
+  padding: 20px 24px 80px 24px;
+  border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.05);
+  position: relative;
+  z-index: 10;
+  align-self: flex-start;
+  overflow: hidden;
+  transition: background-color 1s ease, color 1s ease;
+  color: var(--text-primary);
+}
+.gw-container > *:not(.weather-canvas):not(.scene-backdrop) {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.gw-container.sky-sunny  {
+  --container-bg: rgba(78, 168, 222, 0.6);
+  --text-primary: #ffffff;
+  --text-secondary: #0b3954;
+  --tab-accent: #fbc02d;
+  --temp-color: #fdd835;
+}
+.gw-container.sky-cloudy {
+  --container-bg: rgba(108, 122, 137, 0.75);
+  --text-primary: #ffffff;
+  --text-secondary: #e0e0e0;
+  --tab-accent: #f5b041;
+  --temp-color: #f2f3f4;
+}
+.gw-container.sky-rainy  {
+  --container-bg: rgba(52, 73, 94, 0.85);
+  --text-primary: #ffffff;
+  --text-secondary: #aed6f1;
+  --tab-accent: #f39c12;
+  --temp-color: #85c1e9;
+}
+.gw-container.sky-night  {
+  --container-bg: rgba(26, 37, 48, 0.85);
+  --text-primary: #ffffff;
+  --text-secondary: #d5d8dc;
+  --tab-accent: #f1c40f;
+  --temp-color: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .gw-container { border-radius: 12px; }
+  body { padding: 12px 8px; }
+}

@@ -1,0 +1,54 @@
+{% extends "_base.html" %}
+{% block titulo %}Publicar noticia — nuestroclima.co{% endblock %}
+{% block main_clase %} lectura{% endblock %}
+{% block contenido %}
+  <h1 style="font-size:22px;font-weight:700;margin:0 0 6px;">Publicar noticia del día</h1>
+  <p style="font-size:13.5px;color:var(--ink-soft);margin:0 0 26px;">
+    Se muestran en el inicio y se borran automáticamente al empezar el día siguiente.
+  </p>
+
+  {% if error %}
+    <div style="background:#f9dfdb;color:#8f2a1d;border-radius:8px;padding:12px 16px;font-size:13.5px;margin-bottom:20px;">{{ error }}</div>
+  {% endif %}
+  {% if exito %}
+    <div style="background:var(--verde-soft);color:var(--verde);border-radius:8px;padding:12px 16px;font-size:13.5px;margin-bottom:20px;">Noticia publicada.</div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:14px;max-width:480px;">
+    <label style="font-size:13px;font-weight:600;">
+      Clave de administración
+      <input type="password" name="clave" required style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;">
+    </label>
+    <label style="font-size:13px;font-weight:600;">
+      Tipo
+      <select name="tipo" style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;">
+        <option value="informativa">Informativa</option>
+        <option value="alerta">Alerta</option>
+      </select>
+    </label>
+    <label style="font-size:13px;font-weight:600;">
+      Encabezado
+      <input type="text" name="titulo" maxlength="160" required style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;">
+    </label>
+    <label style="font-size:13px;font-weight:600;">
+      Texto
+      <textarea name="texto" rows="5" required style="display:block;width:100%;margin-top:4px;padding:9px 10px;border:1px solid var(--line);border-radius:6px;font-family:inherit;"></textarea>
+    </label>
+    <label style="font-size:13px;font-weight:600;">
+      Imagen (opcional — jpg, png o webp)
+      <input type="file" name="imagen" accept=".jpg,.jpeg,.png,.webp" style="display:block;width:100%;margin-top:4px;">
+    </label>
+    <button type="submit" style="align-self:flex-start;background:var(--verde);color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;">Publicar</button>
+  </form>
+
+  <h2 style="font-size:15px;font-weight:700;margin:36px 0 14px;">Noticias de hoy ({{ noticias|length }})</h2>
+  {% for n in noticias %}
+    <div style="border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:10px;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:{{ 'var(--alerta-roja)' if n.tipo == 'alerta' else 'var(--rio)' }};font-weight:600;">{{ n.tipo }}</div>
+      <div style="font-weight:600;font-size:14px;margin-top:2px;">{{ n.titulo }}</div>
+      <div style="font-size:13px;color:var(--ink-soft);margin-top:4px;">{{ n.texto }}</div>
+    </div>
+  {% else %}
+    <p style="font-size:13.5px;color:var(--ink-soft);">Todavía no hay noticias publicadas hoy.</p>
+  {% endfor %}
+{% endblock %}

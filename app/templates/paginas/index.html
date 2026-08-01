@@ -4,19 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sistema Clima | Región Guayaba-Bocadillo</title>
-  <link rel="icon" type="image/svg+xml" href="/static/icon-sun.svg">
-  <link rel="apple-touch-icon" href="/static/icon-apple-touch.png">
-  <link rel="manifest" href="/static/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/static/img/mapa-estaciones/icon-sun.svg">
+  <link rel="apple-touch-icon" href="/static/img/marca/icon-apple-touch.png">
+  <link rel="manifest" href="/static/img/marca/manifest.json">
   <meta name="theme-color" content="#1c1e22">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Clima Guayaba-Bocadillo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/style.css?v=37">
+  <link rel="stylesheet" href="/static/css/dashboard/base.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/header-current.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/tabs-charts.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/rain-map.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/station-modal.css?v=1">
   <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
 </head>
 <body class="theme-dark">
+
+  <a href="/" style="display:block;text-align:center;padding:8px;font-size:12px;color:#9aa0a6;background:#14151a;text-decoration:none;">← Volver a nuestroclima.co</a>
 
   <!-- CONTENIDO PRINCIPAL -->
   <div class="gw-container">
@@ -26,7 +32,7 @@
 
     <!-- ESCENA DE FINCA EN LA PARTE BAJA DE LA TARJETA -->
     <div class="scene-backdrop">
-      <img src="/static/bg_sunny.png" alt="Finca" class="scene-backdrop-img" id="sceneImg">
+      <img src="/static/img/mapa-estaciones/bg_sunny.png" alt="Finca" class="scene-backdrop-img" id="sceneImg">
       <div class="scene-backdrop-fade"></div>
     </div>
 
@@ -49,7 +55,7 @@
 
     <section class="gw-main-weather">
       <div class="gw-main-left">
-        <img src="/static/icon-sun.svg" id="gwMainIcon" alt="Clima" class="gw-huge-icon">
+        <img src="/static/img/mapa-estaciones/icon-sun.svg" id="gwMainIcon" alt="Clima" class="gw-huge-icon">
         <div class="gw-temp-box">
           <span class="gw-temp-value" id="gwTemp">--</span>
           <!-- Unidades clickeables directamente -->
@@ -229,7 +235,7 @@
         </div>
       </div>
       <label class="gw-radar-toggle">
-        Nubes (satélite NASA GOES) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo):
+        Nubes (satélite NASA GOES) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo, y unos niveles más de zoom se ven borrosos):
         <select id="gwSatSelect">
           <option value="geocolor" selected>Nubes normales (GeoColor)</option>
           <option value="infrared">Nubes infrarrojo (altura/tormenta)</option>
@@ -301,8 +307,14 @@
 
   <script src="/static/lib/chart.min.js?v=29"></script>
   <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=29"></script>
-  <script src="/static/js/weather-fx.js?v=29"></script>
+  <script src="/static/js/dashboard/weather-fx.js?v=29"></script>
   <script src="https://js.arcgis.com/3.28/"></script>
-  <script src="/static/js/dashboard.js?v=48"></script>
+  <script src="/static/js/dashboard/core.js?v=1"></script>
+  <script src="/static/js/dashboard/realtime.js?v=1"></script>
+  <script src="/static/js/dashboard/history.js?v=1"></script>
+  <script src="/static/js/dashboard/ui-listeners.js?v=1"></script>
+  <script src="/static/js/dashboard/map-rain.js?v=2"></script>
+  <script src="/static/js/dashboard/map-satellite.js?v=3"></script>
+  <script src="/static/js/dashboard/main.js?v=1"></script>
 </body>
 </html>

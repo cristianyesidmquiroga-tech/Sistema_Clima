@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block titulo %}nuestroclima.co{% endblock %}</title>
+<link rel="stylesheet" href="/static/css/site/tokens.css?v=1">
+<link rel="stylesheet" href="/static/css/site/layout.css?v=1">
+{% block css_extra %}{% endblock %}
+</head>
+<body>
+  <div class="gwsite-utility">
+    <a href="/nosotros">Contacto</a>
+  </div>
+
+  <nav class="gwsite-nav">
+    <a class="marca" href="/">nuestroclima.co</a>
+    <a class="gwsite-tab {% if activo == 'inicio' %}activa{% endif %}" href="/">Inicio</a>
+    <a class="gwsite-tab {% if activo == 'mapa-estaciones' %}activa{% endif %}" href="/mapa-estaciones">Mapa de Estaciones</a>
+    <a class="gwsite-tab {% if activo == 'reporte-velez' %}activa{% endif %}" href="/reporte-velez">Reporte Vélez</a>
+    <a class="gwsite-tab {% if activo == 'rios' %}activa{% endif %}" href="/rios">Ríos</a>
+    <a class="gwsite-tab {% if activo == 'cultivos' %}activa{% endif %}" href="/cultivos">Cultivos</a>
+    <a class="gwsite-tab {% if activo == 'incendios' %}activa{% endif %}" href="/incendios">Incendios</a>
+    <a class="gwsite-tab {% if activo == 'riesgo-geologico' %}activa{% endif %}" href="/riesgo-geologico">Riesgo Geológico</a>
+    <a class="gwsite-tab {% if activo == 'nosotros' %}activa{% endif %}" href="/nosotros">Nosotros</a>
+  </nav>
+
+  <main class="gwsite-main{% block main_clase %}{% endblock %}">
+    {% block contenido %}{% endblock %}
+  </main>
+
+  <footer class="gwsite-footer">
+    <div class="enlaces">
+      <a href="/privacidad">Política de privacidad</a>
+      <a href="/privacidad#cookies">Cookies</a>
+      <a href="/privacidad#terminos">Términos y condiciones de uso</a>
+      <a href="/privacidad#copyright">Copyright</a>
+    </div>
+    <div class="copy">© Sistema de Monitoreo Agroclimático — Provincia de Vélez, {{ anio_actual }} · www.nuestroclima.co</div>
+  </footer>
+
+  <div class="gwsite-cookies" id="gwsiteCookies">
+    <p>Usamos cookies para mejorar tu experiencia en el sitio. Puedes aceptarlas o rechazarlas — no afecta el contenido que puedes consultar.</p>
+    <div class="acciones">
+      <button class="rechazar" id="gwsiteCookiesRechazar">Rechazar</button>
+      <button class="aceptar" id="gwsiteCookiesAceptar">Aceptar</button>
+    </div>
+  </div>
+
+  <script src="/static/js/site/site.js?v=1"></script>
+  {% block js_extra %}{% endblock %}
+</body>
+</html>
