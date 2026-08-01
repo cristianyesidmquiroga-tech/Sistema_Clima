@@ -1,0 +1,56 @@
+.grv-marca-agua {
+  position: fixed; bottom: 12px; right: 16px; z-index: 50;
+  font-size: 11.5px; color: var(--ink-soft); background: rgba(250,249,245,.85);
+  padding: 4px 10px; border-radius: 6px; pointer-events: none;
+}
+
+.grv-encabezado { padding: 8px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 24px; }
+.grv-encabezado h1 { margin: 0 0 6px; font-size: 26px; }
+.grv-encabezado p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+
+.grv-panel { margin-bottom: 28px; }
+.grv-panel h2 { font-size: 17px; margin: 0 0 12px; }
+.grv-vacio { color: var(--ink-soft); font-size: 13.5px; }
+
+.grv-alertas { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.grv-alerta-card {
+  border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+  background: var(--paper-soft);
+}
+.grv-alerta-card h3 { margin: 0 0 6px; font-size: 15px; }
+.grv-alerta-card .grv-nivel { font-size: 13px; font-weight: 600; text-transform: capitalize; }
+.grv-alerta-normal .grv-nivel { color: var(--verde); }
+.grv-alerta-amarilla .grv-nivel, .grv-alerta-bajos .grv-nivel { color: var(--alerta-amarilla); }
+.grv-alerta-naranja .grv-nivel { color: var(--alerta-naranja); }
+.grv-alerta-roja .grv-nivel { color: var(--alerta-roja); }
+
+.grv-nota { margin: -6px 0 14px; font-size: 12.5px; color: var(--ink-soft); }
+
+.grv-municipios { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.grv-municipio-card { border: 1px solid var(--line); border-radius: 10px; padding: 16px; background: var(--paper-soft); }
+.grv-municipio-card h3 { margin: 0 0 10px; font-size: 15px; }
+.grv-metricas { display: flex; flex-direction: column; gap: 8px; }
+.grv-metrica { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; }
+.grv-metrica-nombre { color: var(--ink-soft); font-weight: 600; }
+.grv-metrica-valor { font-size: 13px; }
+.grv-metrica-valor small { color: var(--ink-soft); font-size: 11.5px; }
+.grv-metrica-vacia .grv-vacio { font-size: 12.5px; }
+
+.grv-timelapse { text-align: center; }
+.grv-proximamente {
+  border: 1px dashed var(--line); border-radius: 10px; padding: 24px;
+  color: var(--ink-soft); font-size: 14px; background: var(--paper-soft);
+}
+
+.grv-acciones { display: flex; gap: 12px; flex-wrap: wrap; padding: 8px 0 40px; }
+.grv-btn {
+  font-family: inherit; font-size: 14px; font-weight: 600; padding: 10px 18px;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--paper);
+  color: var(--ink); cursor: pointer; text-decoration: none; display: inline-block;
+}
+.grv-btn-primario { background: var(--rio); color: #fff; border-color: var(--rio); }
+
+@media (max-width: 720px) {
+  .grv-marca-agua { font-size: 10px; }
+  .grv-encabezado h1 { font-size: 21px; }
+}

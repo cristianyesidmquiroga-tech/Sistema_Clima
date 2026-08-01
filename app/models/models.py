@@ -136,9 +136,9 @@ class HistorialEstacion(db.Model):
 
 class Noticia(db.Model):
     """
-    Noticias del dia para la provincia (landing publica). Se suben a
-    diario y se borran al terminar el dia (ver limpiar_noticias_viejas)
-    para no acumular en la base de datos.
+    Noticias para la provincia. La landing publica solo muestra las de
+    hoy (ver obtener_noticias_hoy), pero ninguna se borra nunca: quedan
+    todas guardadas como archivo historico (ver obtener_noticias_historial).
     """
     __tablename__ = 'noticias'
     id = db.Column(db.Integer, primary_key=True)
@@ -603,15 +603,23 @@ def crear_noticia(tipo, titulo, texto, imagen_url=None):
 
 
 # ─── NOTICIAS: CONSULTA ───────────────────────────────────────────
-def limpiar_noticias_viejas():
-    """Borra noticias de dias anteriores a hoy (UTC). Se llama antes de
-    cada lectura, asi no hace falta un proceso aparte para esto."""
-    inicio_hoy = datetime.combine(datetime.utcnow().date(), datetime.min.time())
-    Noticia.query.filter(Noticia.fecha_publicacion < inicio_hoy).delete()
-    db.session.commit()
-
-
 def obtener_noticias_hoy():
-    limpiar_noticias_viejas()
-    filas = Noticia.query.order_by(Noticia.fecha_publicacion.desc()).all()
+    """Noticias publicadas hoy (UTC), para la landing publica. No se
+    borra nada: las noticias de dias anteriores quedan disponibles para
+    siempre en la base de datos como archivo historico (ver
+    obtener_noticias_historial)."""
+    inicio_hoy = datetime.combine(datetime.utcnow().date(), datetime.min.time())
+    filas = Noticia.query.filter(
+        Noticia.fecha_publicacion >= inicio_hoy
+    ).order_by(Noticia.fecha_publicacion.desc()).all()
+    return [f.to_dict() for f in filas]
+
+
+def obtener_noticias_historial(dias=90):
+    """Archivo historico de noticias (uso interno/administrativo), no
+    expuesto en la landing publica que solo muestra las de hoy."""
+    limite = datetime.utcnow() - timedelta(days=dias)
+    filas = Noticia.query.filter(
+        Noticia.fecha_publicacion >= limite
+    ).order_by(Noticia.fecha_publicacion.desc()).all()
     return [f.to_dict() for f in filas]

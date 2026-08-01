@@ -34,6 +34,10 @@ services:
     build: .
     container_name: clima_app
     restart: unless-stopped
+    volumes:
+      - noticias_uploads:/app/app/static/uploads/noticias
+      - capturas_mapas:/app/app/static/img/reporte-velez/capturas
+      - archivo_capturas_comprimidas:/app/archivo_datos/capturas_mapas
     environment:
       DB_USER: ${DB_USER:-clima}
       DB_PASS: ${DB_PASS:-clima123}
@@ -102,6 +106,63 @@ services:
     mem_limit: 128m
     cpus: 0.25
 
+  lecturas_fews_poller:
+    build: .
+    container_name: clima_lecturas_fews
+    restart: unless-stopped
+    command: ["python", "scripts/lecturas_fews_poller.py"]
+    environment:
+      DB_USER: ${DB_USER:-clima}
+      DB_PASS: ${DB_PASS:-clima123}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+      LECTURAS_FEWS_INTERVALO: ${LECTURAS_FEWS_INTERVALO:-86400}
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.25
+
+  publicador_velez:
+    build: .
+    container_name: clima_publicador_velez
+    restart: unless-stopped
+    command: ["python", "scripts/publicar_reporte_velez.py"]
+    environment:
+      DB_USER: ${DB_USER:-clima}
+      DB_PASS: ${DB_PASS:-clima123}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+      REPORTE_VELEZ_INTERVALO: ${REPORTE_VELEZ_INTERVALO:-604800}
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.25
+
+  capturas_mapas_poller:
+    build: .
+    container_name: clima_capturas_mapas
+    restart: unless-stopped
+    command: ["python", "scripts/capturas_mapas_poller.py"]
+    volumes:
+      - capturas_mapas:/app/app/static/img/reporte-velez/capturas
+      - archivo_capturas_comprimidas:/app/archivo_datos/capturas_mapas
+    environment:
+      DB_USER: ${DB_USER:-clima}
+      DB_PASS: ${DB_PASS:-clima123}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+      CAPTURAS_MAPAS_INTERVALO: ${CAPTURAS_MAPAS_INTERVALO:-86400}
+    depends_on:
+      db:
+        condition: service_healthy
+    mem_limit: 128m
+    cpus: 0.25
+
   reporter:
     build: .
     container_name: clima_reporter
@@ -124,3 +185,6 @@ services:
 
 volumes:
   pgdata:
+  noticias_uploads:
+  capturas_mapas:
+  archivo_capturas_comprimidas:

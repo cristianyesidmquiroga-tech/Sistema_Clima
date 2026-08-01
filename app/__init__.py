@@ -131,6 +131,16 @@ def create_app():
         from datetime import datetime
         return {"anio_actual": datetime.utcnow().year}
 
+    @app.template_filter('fecha_corta')
+    def _fecha_corta(fecha_iso):
+        """'2026-08-01' -> '1 ago' (usado en el PDF del Reporte Velez,
+        mismo formato que ya usa el navegador con toLocaleDateString)."""
+        if not fecha_iso:
+            return '--'
+        meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+        anio, mes, dia = fecha_iso.split('-')
+        return f"{int(dia)} {meses[int(mes) - 1]}"
+
     @app.after_request
     def set_security_headers(response):
         response.headers['X-Content-Type-Options'] = 'nosniff'

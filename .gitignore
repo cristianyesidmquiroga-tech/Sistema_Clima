@@ -7,3 +7,9 @@ server_log.txt
 clima.db
 *.sqlite
 .claude/settings.local.json
+
+# Datos generados en runtime (capturas de mapas comprimidas, ver
+# docs/archivo_capturas_mapas.md) - no es codigo, vive en el volumen del
+# servidor, no en el repositorio.
+archivo_datos/
+app/static/img/reporte-velez/capturas/

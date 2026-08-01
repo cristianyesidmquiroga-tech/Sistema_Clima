@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 2.2cm 1.8cm;
+    @bottom-center { content: "{{ marca_agua }} · pagina " counter(page) " de " counter(pages); font-size: 9px; color: #565b4f; }
+  }
+  body { font-family: "DejaVu Sans", Arial, sans-serif; color: #22261f; font-size: 12px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitulo { color: #565b4f; font-size: 11px; margin: 0 0 20px; }
+  h2 { font-size: 14px; margin: 22px 0 8px; border-bottom: 1px solid #ddd9c9; padding-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #ddd9c9; }
+  th { color: #565b4f; }
+  .marca-agua-pagina {
+    position: fixed; top: 45%; left: 0; right: 0; text-align: center;
+    font-size: 46px; color: rgba(44, 110, 142, 0.08); transform: rotate(-25deg);
+  }
+</style>
+</head>
+<body>
+  <div class="marca-agua-pagina">{{ marca_agua }}</div>
+
+  <h1>Reporte Provincia de Vélez</h1>
+  <p class="subtitulo">Semana del {{ reporte.fecha_publicacion[:10] }} · {{ marca_agua }}</p>
+
+  <h2>Estación propia esta semana</h2>
+  {% set ep = reporte.contenido.estacion_propia %}
+  {% if ep %}
+    <p>
+      Temp. máx {{ ep.temp_max or '--' }}&deg;C · Temp. mín {{ ep.temp_min or '--' }}&deg;C ·
+      Lluvia acumulada {{ ep.lluvia_mm or '--' }} mm · Viento máx {{ ep.viento_max or '--' }} km/h
+    </p>
+  {% else %}
+    <p>Sin datos disponibles esta semana.</p>
+  {% endif %}
+
+  <h2>Alertas hidrológicas por río</h2>
+  {% set alertas = reporte.contenido.alertas %}
+  {% if alertas %}
+    <table>
+      <thead><tr><th>Río</th><th>Nivel</th></tr></thead>
+      <tbody>
+        {% for a in alertas %}
+        <tr><td>{{ a.nombre }}</td><td>{{ a.nivel }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Sin alertas disponibles esta semana.</p>
+  {% endif %}
+
+  <h2>Estaciones IDEAM por municipio</h2>
+  <p style="font-size: 10px; color: #565b4f; margin: 0 0 8px;">
+    Mínimo y máximo de la semana registrados en cada municipio, con el día en que se registró cada uno.
+  </p>
+  {% set municipios = reporte.contenido.municipios %}
+  {% if municipios %}
+    <table>
+      <thead><tr><th>Municipio</th><th>Nivel (m)</th><th>Caudal (m³/s)</th><th>Lluvia (mm)</th><th>Temp. (°C)</th></tr></thead>
+      <tbody>
+        {% for m in municipios %}
+        <tr>
+          <td>{{ m.municipio }}</td>
+          {% for clave in ['nivel', 'caudal', 'lluvia', 'temp'] %}
+          <td>
+            {% if m[clave] %}
+              Mín {{ m[clave].min }} ({{ m[clave].min_fecha | fecha_corta }})<br>
+              Máx {{ m[clave].max }} ({{ m[clave].max_fecha | fecha_corta }})
+            {% else %}--{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Sin datos disponibles esta semana.</p>
+  {% endif %}
+
+  <h2>Análisis histórico semanal</h2>
+  {% set analisis = reporte.contenido.analisis %}
+  {% if analisis %}
+    {% for texto in analisis %}<p>{{ texto }}</p>{% endfor %}
+  {% else %}
+    <p>Aún no hay suficiente historial para comparar semanas.</p>
+  {% endif %}
+</body>
+</html>

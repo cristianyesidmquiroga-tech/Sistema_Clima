@@ -15,6 +15,7 @@ from app.models.models import (
     obtener_historial_estacion, obtener_resumen_semana,
     obtener_noticias_hoy, crear_noticia
 )
+from app.models.reporte_velez import obtener_ultimo_reporte_publicado
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
@@ -63,15 +64,17 @@ COLUMNAS_EXPORTAR = [
     ("sensacion_termica", "Sensacion Termica (C)"),
 ]
 
-# Vistas de las fases 1-4 (aun no construidas) - placeholder para que el
+# Vistas de las fases 2-4 (aun no construidas) - placeholder para que el
 # menu no tenga enlaces rotos mientras se construyen una por una.
+# 'reporte-velez' (Fase 1) ya tiene su propia vista real, ver mas abajo.
 VISTAS_EN_CONSTRUCCION = {
-    'reporte-velez': 'Reporte Vélez',
     'rios': 'Ríos',
     'cultivos': 'Cultivos',
     'incendios': 'Incendios',
     'riesgo-geologico': 'Riesgo Geológico',
 }
+
+MARCA_AGUA_TEXTO = "www.nuestroclima.co"
 
 
 # ─── HELPERS PRIVADOS ──────────────────────────────────────────
@@ -352,6 +355,45 @@ def api_estacion_historial(station_id):
     return jsonify(datos)
 
 
+# ─── API: REPORTE PROVINCIA DE VELEZ ───────────────────────────
+@bp.route('/api/reporte_velez')
+@limiter.limit("60 per hour")
+def api_reporte_velez():
+    # Cadencia publica semanal (Principio #2): esta ruta jamas calcula en
+    # vivo, solo sirve el ultimo snapshot ya congelado por
+    # scripts/publicar_reporte_velez.py. FEWS/IDEAM nunca se consultan
+    # desde aqui ni desde el navegador (Principio #1).
+    publicado = obtener_ultimo_reporte_publicado()
+    if not publicado:
+        return jsonify({"disponible": False}), 200
+    return jsonify({"disponible": True, **publicado})
+
+@bp.route('/api/reporte_velez/pdf')
+@limiter.limit("20 per hour")
+def api_reporte_velez_pdf():
+    publicado = obtener_ultimo_reporte_publicado()
+    if not publicado:
+        return jsonify({"error": "Aun no hay un reporte publicado"}), 404
+
+    from weasyprint import HTML
+    html = render_template(
+        'paginas/reporte-velez-pdf.html',
+        reporte=publicado,
+        marca_agua=MARCA_AGUA_TEXTO,
+    )
+    buffer = io.BytesIO()
+    HTML(string=html, base_url=request.host_url).write_pdf(buffer)
+    buffer.seek(0)
+
+    fecha = publicado['fecha_publicacion'][:10]
+    return send_file(
+        buffer,
+        as_attachment=True,
+        download_name=f"reporte_velez_{fecha}.pdf",
+        mimetype="application/pdf",
+    )
+
+
 # ─── API: ANALISIS HISTORICO Y EXPORTACION ─────────────────────
 @bp.route('/api/analisis')
 @limiter.limit("80 per hour")
@@ -426,6 +468,10 @@ def mapa_estaciones():
     # sitio. '/' es la landing publica; esta es la unica forma de llegar
     # al mapa.
     return render_template('paginas/index.html')
+
+@bp.route('/reporte-velez')
+def reporte_velez():
+    return render_template('paginas/reporte-velez.html', activo='reporte-velez')
 
 @bp.route('/privacidad')
 def privacidad():

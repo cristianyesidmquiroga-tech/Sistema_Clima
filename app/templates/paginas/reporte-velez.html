@@ -1,0 +1,54 @@
+{% extends "_base.html" %}
+{% block titulo %}Reporte Provincia de Vélez | nuestroclima.co{% endblock %}
+{% block css_extra %}<link rel="stylesheet" href="/static/css/reporte-velez/reporte-velez.css?v=1">{% endblock %}
+{% block contenido %}
+
+<div class="grv-marca-agua">www.nuestroclima.co</div>
+
+<section class="grv-encabezado">
+  <h1>Reporte Provincia de Vélez</h1>
+  <p id="grvFechaSemana">Cargando semana…</p>
+</section>
+
+<section class="grv-panel" id="grvEstacionPropia">
+  <h2>Estación propia esta semana</h2>
+  <p class="grv-vacio">Cargando…</p>
+</section>
+
+<section class="grv-panel">
+  <h2>Alertas hidrológicas por río</h2>
+  <div class="grv-alertas" id="grvAlertas">
+    <p class="grv-vacio">Cargando…</p>
+  </div>
+</section>
+
+<section class="grv-panel">
+  <h2>Estaciones IDEAM por municipio</h2>
+  <p class="grv-nota">Mínimo y máximo de la semana registrados por las estaciones de cada municipio, con el día en que se registró cada uno.</p>
+  <div class="grv-municipios" id="grvMunicipios">
+    <p class="grv-vacio">Cargando…</p>
+  </div>
+</section>
+
+<section class="grv-panel">
+  <h2>Análisis histórico semanal</h2>
+  <div id="grvAnalisis">
+    <p class="grv-vacio">Cargando…</p>
+  </div>
+</section>
+
+<section class="grv-panel grv-timelapse">
+  <h2>Vista satelital de la zona</h2>
+  <p class="grv-proximamente">
+    Estamos acumulando capturas diarias del satélite para poder mostrar aquí un timelapse
+    del cambio de la zona en el tiempo. Disponible próximamente.
+  </p>
+</section>
+
+<section class="grv-acciones">
+  <button id="grvDescargarPdf" class="grv-btn grv-btn-primario">Descargar PDF semanal</button>
+  <a href="/mapa-estaciones" class="grv-btn">Ver mapa de estaciones completo</a>
+</section>
+
+{% endblock %}
+{% block js_extra %}<script src="/static/js/reporte-velez/reporte-velez.js?v=1"></script>{% endblock %}
