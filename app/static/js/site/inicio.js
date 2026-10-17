@@ -45,17 +45,41 @@ async function cargarNoticias() {
       cont.innerHTML = '<p class="gwi-noticias-vacio">Todavía no hay noticias publicadas hoy.</p>';
       return;
     }
-    cont.innerHTML = noticias.map(n => `
-      <article class="gwi-noticia">
-        ${n.imagen_url ? `<img src="${n.imagen_url}" alt="">` : ''}
-        <div class="cuerpo">
-          <div class="etiqueta ${n.tipo}">${n.tipo}</div>
-          <h4>${n.titulo}</h4>
-          <p>${n.texto}</p>
-          <time>${new Date(n.fecha_publicacion).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</time>
-        </div>
-      </article>
-    `).join('');
+    // textContent en vez de innerHTML: los datos vienen de un formulario admin
+    cont.replaceChildren(...noticias.map((n) => {
+      const articulo = document.createElement('article');
+      articulo.className = 'gwi-noticia';
+
+      if (n.imagen_url) {
+        const img = document.createElement('img');
+        img.src = n.imagen_url;
+        img.alt = '';
+        articulo.appendChild(img);
+      }
+
+      const cuerpo = document.createElement('div');
+      cuerpo.className = 'cuerpo';
+
+      const etiqueta = document.createElement('div');
+      etiqueta.className = `etiqueta ${n.tipo}`;
+      etiqueta.textContent = n.tipo;
+      cuerpo.appendChild(etiqueta);
+
+      const h4 = document.createElement('h4');
+      h4.textContent = n.titulo;
+      cuerpo.appendChild(h4);
+
+      const p = document.createElement('p');
+      p.textContent = n.texto;
+      cuerpo.appendChild(p);
+
+      const time = document.createElement('time');
+      time.textContent = new Date(n.fecha_publicacion).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+      cuerpo.appendChild(time);
+
+      articulo.appendChild(cuerpo);
+      return articulo;
+    }));
   } catch (e) {
     cont.innerHTML = '<p class="gwi-noticias-vacio">No se pudieron cargar las noticias.</p>';
   }
