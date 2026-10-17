@@ -91,9 +91,9 @@ def create_app():
     if allowed_origins:
         CORS(app, origins=[o.strip() for o in allowed_origins.split(',') if o.strip()])
 
-    # Configuración PostgreSQL desde variables de entorno
-    DB_USER = os.environ.get('DB_USER', 'clima')
-    DB_PASS = os.environ.get('DB_PASS', 'clima123')
+    # DB_USER y DB_PASS son obligatorias: sin valor por defecto
+    DB_USER = os.environ['DB_USER']
+    DB_PASS = os.environ['DB_PASS']
     DB_HOST = os.environ.get('DB_HOST', 'db')
     DB_PORT = os.environ.get('DB_PORT', '5432')
     DB_NAME = os.environ.get('DB_NAME', 'clima_db')
@@ -146,6 +146,12 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # HSTS por 1 anio, incluye subdominios
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        # El sitio no usa camara, microfono, ubicacion ni pagos
+        response.headers['Permissions-Policy'] = (
+            'geolocation=(), camera=(), microphone=(), payment=()'
+        )
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
             # 'unsafe-eval' es necesario porque el cargador de modulos Dojo
@@ -153,9 +159,9 @@ def create_app():
             # requiere para funcionar; sin esto el mapa no carga.
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com; "
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com https://js.arcgis.com; "
-            "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
-            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
+            "font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
+            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
         )
         return response
 

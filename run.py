@@ -1,3 +1,8 @@
+from dotenv import load_dotenv
+
+# Solo en desarrollo local; en Docker las variables ya vienen del entorno
+load_dotenv()
+
 from app import create_app
 
 app = create_app()
