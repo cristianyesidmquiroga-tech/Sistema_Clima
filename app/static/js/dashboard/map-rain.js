@@ -221,6 +221,15 @@ function actualizarPromedioRegional(data) {
 
 // ─── MODAL DE DETALLE POR ESTACION ────────────────────────────
 let stationCharts = {};
+let estacionAbierta = null;
+
+function avisoEstacion24h(texto, ocultarGraficas) {
+  const aviso = document.getElementById('gwStEstado24');
+  if (!aviso) return;
+  aviso.textContent = texto;
+  aviso.hidden = !texto;
+  document.querySelectorAll('.gw-station-chart-block').forEach((b) => { b.hidden = !!ocultarGraficas; });
+}
 
 function destruirStationCharts() {
   Object.values(stationCharts).forEach(c => c && c.destroy());
@@ -232,21 +241,31 @@ async function openStationModal(stationId, nombre) {
   const modal = document.getElementById('gwStationModal');
   const titulo = document.getElementById('gwStationModalTitle');
   if (!modal || !titulo) return;
-  titulo.textContent = `${nombre} — últimas 24h`;
+  titulo.textContent = `${nombre} — últimas 24h y semana`;
   modal.classList.add('show');
+  estacionAbierta = stationId;
+  const vigente = () => estacionAbierta === stationId;
+  destruirStationCharts();
+  avisoEstacion24h('Cargando las últimas 24 horas...', false);
+  cargarSemanaEstacion(stationId, vigente);
 
   try {
     const res = await fetch(`/api/estacion/${stationId}/historial?dias=1`);
+    if (!res.ok) throw new Error(res.status);
     const data = await res.json();
+    if (!vigente()) return;
     renderStationCharts(data);
+    avisoEstacion24h(data.length ? '' : 'No hay datos de las últimas 24 horas para esta estación.', !data.length);
   } catch (e) {
     console.error('Error cargando historial de estacion', e);
+    if (vigente()) avisoEstacion24h('No se pudo cargar el historial de las últimas 24 horas.', true);
   }
 }
 
 function closeStationModal() {
   const modal = document.getElementById('gwStationModal');
   if (modal) modal.classList.remove('show');
+  estacionAbierta = null;
 }
 
 function renderStationCharts(data) {
