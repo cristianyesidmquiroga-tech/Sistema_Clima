@@ -91,9 +91,9 @@ def create_app():
     if allowed_origins:
         CORS(app, origins=[o.strip() for o in allowed_origins.split(',') if o.strip()])
 
-    # Configuración PostgreSQL desde variables de entorno
-    DB_USER = os.environ.get('DB_USER', 'clima')
-    DB_PASS = os.environ.get('DB_PASS', 'clima123')
+    # DB_USER y DB_PASS son obligatorias: sin valor por defecto
+    DB_USER = os.environ['DB_USER']
+    DB_PASS = os.environ['DB_PASS']
     DB_HOST = os.environ.get('DB_HOST', 'db')
     DB_PORT = os.environ.get('DB_PORT', '5432')
     DB_NAME = os.environ.get('DB_NAME', 'clima_db')
