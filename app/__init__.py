@@ -146,6 +146,12 @@ def create_app():
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # HSTS por 1 anio, incluye subdominios
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        # El sitio no usa camara, microfono, ubicacion ni pagos
+        response.headers['Permissions-Policy'] = (
+            'geolocation=(), camera=(), microphone=(), payment=()'
+        )
         response.headers['Content-Security-Policy'] = (
             "default-src 'self'; "
             # 'unsafe-eval' es necesario porque el cargador de modulos Dojo
