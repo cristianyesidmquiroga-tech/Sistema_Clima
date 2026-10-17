@@ -16,6 +16,7 @@ from app.models.models import (
     obtener_noticias_hoy, crear_noticia
 )
 from app.models.reporte_velez import obtener_ultimo_reporte_publicado
+from app.models.resumen_estacion import obtener_resumen_semanal
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
@@ -354,6 +355,16 @@ def api_estacion_historial(station_id):
     dias = max(1, min(dias, 7))
     datos = obtener_historial_estacion(station_id, dias)
     return jsonify(datos)
+
+
+@bp.route('/api/estacion/<station_id>/semana')
+@limiter.limit("80 per hour")
+@cache.cached(timeout=180)
+def api_estacion_semana(station_id):
+    ids_validos = {e["id"] for e in ESTACIONES_MAPA_LLUVIAS}
+    if station_id not in ids_validos:
+        return jsonify({"error": "Estacion desconocida"}), 404
+    return jsonify(obtener_resumen_semanal(station_id))
 
 
 # ─── API: REPORTE PROVINCIA DE VELEZ ───────────────────────────
