@@ -159,9 +159,9 @@ def create_app():
             # requiere para funcionar; sin esto el mapa no carga.
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com; "
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com https://js.arcgis.com; "
-            "img-src 'self' data: https://*.tile.openstreetmap.org https://tilecache.rainviewer.com https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
-            "connect-src 'self' https://api.rainviewer.com https://tilecache.rainviewer.com https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
+            "font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; "
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
+            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
         )
         return response
 
