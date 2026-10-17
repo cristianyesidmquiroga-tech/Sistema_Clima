@@ -180,7 +180,8 @@ def recibir_datos():
 
     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Datos recibidos de la estación:")
     for k, v in datos.items():
-        print(f"  {k}: {v}")
+        if k != 'PASSKEY':
+            print(f"  {k}: {v}")
 
     guardar_lectura(datos)
     return "OK", 200
