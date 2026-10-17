@@ -39,8 +39,8 @@ services:
       - capturas_mapas:/app/app/static/img/reporte-velez/capturas
       - archivo_capturas_comprimidas:/app/archivo_datos/capturas_mapas
     environment:
-      DB_USER: ${DB_USER:-clima}
-      DB_PASS: ${DB_PASS:-clima123}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
