@@ -7,6 +7,11 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.models.models import db
 from app.security import limite_dinamico_por_pais, alertar_limite_excedido
 import os
+import re
+from urllib.parse import urlsplit
+
+# Rutas validas para la redireccion canonica: solo caracteres de ruta URL.
+_RUTA_CANONICA_VALIDA = re.compile(r'\A/[A-Za-z0-9._~!$&\'()*+,;=:@%/-]*\Z')
 
 
 def _limite_dinamico():
@@ -69,10 +74,17 @@ def create_app():
     @app.before_request
     def _forzar_www():
         if request.host.split(':')[0] == 'nuestroclima.co':
-            destino = f"https://www.nuestroclima.co{request.path}"
-            if request.query_string:
-                destino += f"?{request.query_string.decode()}"
-            return redirect(destino, code=301)
+            # El host destino es fijo; la ruta se valida contra una lista de
+            # caracteres de ruta para no arrastrar nada raro a la redireccion.
+            ruta = request.path if _RUTA_CANONICA_VALIDA.match(request.path) else '/'
+            destino = f"https://www.nuestroclima.co{ruta}"
+            qs = request.query_string
+            if qs and b'\r' not in qs and b'\n' not in qs:
+                destino += f"?{qs.decode('latin-1')}"
+            # Solo redirige si el host destino es el canonico (allowlist)
+            if urlsplit(destino).netloc == 'www.nuestroclima.co':
+                return redirect(destino, code=301)
+        return None
 
     # Modo mantenimiento: se activa con MODO_MANTENIMIENTO=true (sin
     # necesidad de detener el servidor ni tocar codigo). Deja pasar
@@ -83,6 +95,7 @@ def create_app():
         if os.environ.get('MODO_MANTENIMIENTO', 'false').lower() == 'true' \
                 and not request.path.startswith('/static/'):
             return render_template('mantenimiento/mantenimiento.html'), 503
+        return None
 
     # CORS: restringido al/los origenes permitidos por ALLOWED_ORIGINS
     # (separados por coma). Si no se define, no se habilita CORS

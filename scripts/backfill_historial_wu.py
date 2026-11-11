@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
-from app.models.models import db, HistorialEstacion, guardar_historial_estacion
+from app.models.models import HistorialEstacion, guardar_historial_estacion
 
 WU_API_KEY = os.environ.get("WU_API_KEY", "")
 WU_HISTORY_URL = "https://api.weather.com/v2/pws/history/hourly"
