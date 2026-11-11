@@ -3,7 +3,6 @@ import subprocess
 import time
 import socket
 import requests
-import json
 import struct
 
 # ============================================================
