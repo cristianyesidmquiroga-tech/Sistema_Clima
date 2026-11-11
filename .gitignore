@@ -15,3 +15,6 @@ archivo_datos/
 app/static/img/reporte-velez/capturas/
 
 .pytest_cache/
+
+# Carpeta instance de Flask (DB local, nunca al repo)
+instance/
