@@ -72,7 +72,7 @@ body {
   transition: background-color 1s ease, color 1s ease;
   color: var(--text-primary);
 }
-.gw-container > *:not(.weather-canvas):not(.scene-backdrop) {
+.gw-container > *:not(.weather-canvas):not(.scene-backdrop):not(.gw-station-modal) {
   position: relative;
   z-index: 2;
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);

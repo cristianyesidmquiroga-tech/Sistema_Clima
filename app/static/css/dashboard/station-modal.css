@@ -55,3 +55,26 @@
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+.gw-station-aviso {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f1f3f4;
+  color: #3c4043;
+  font-size: 13px;
+}
+.gw-station-aviso[hidden] { display: none; }
+
+.gw-station-week { margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 14px; }
+.gw-station-week-titulo { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #1c1e22; }
+.gw-station-week-total { margin: 0 0 10px; font-size: 13px; color: #3c4043; }
+.gw-station-tabla-scroll { overflow-x: auto; margin-bottom: 14px; }
+.gw-station-tabla { width: 100%; border-collapse: collapse; font-size: 12px; color: #1c1e22; }
+.gw-station-tabla caption { text-align: left; font-weight: 600; color: #444; padding-bottom: 6px; }
+.gw-station-tabla th,
+.gw-station-tabla td { padding: 6px 8px; border-bottom: 1px solid rgba(0,0,0,0.08); text-align: left; vertical-align: top; }
+.gw-station-tabla thead th { color: #444; font-weight: 600; white-space: nowrap; }
+.gw-station-tabla tbody th { font-weight: 600; white-space: nowrap; }
+.gw-station-tabla td strong { display: block; font-weight: 700; }
+.gw-station-tabla td small { display: block; color: #5f6368; font-size: 11px; }

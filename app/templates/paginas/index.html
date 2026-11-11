@@ -13,11 +13,11 @@
   <meta name="apple-mobile-web-app-title" content="Clima Guayaba-Bocadillo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/dashboard/base.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/base.css?v=2">
   <link rel="stylesheet" href="/static/css/dashboard/header-current.css?v=1">
   <link rel="stylesheet" href="/static/css/dashboard/tabs-charts.css?v=1">
   <link rel="stylesheet" href="/static/css/dashboard/rain-map.css?v=1">
-  <link rel="stylesheet" href="/static/css/dashboard/station-modal.css?v=1">
+  <link rel="stylesheet" href="/static/css/dashboard/station-modal.css?v=2">
   <link rel="stylesheet" href="https://js.arcgis.com/3.28/esri/css/esri.css">
 </head>
 <body class="theme-dark">
@@ -262,7 +262,7 @@
           <span class="gw-tri-demo"></span>
           <span><strong>Estación fija:</strong> no registra lluvia en este momento.</span>
         </div>
-        <p>Tocá un triángulo para ver su nombre, lluvia acumulada del día y temperatura, y se abre el historial completo con gráficos de las últimas 24h.</p>
+        <p>Tocá un triángulo para ver su nombre, lluvia acumulada del día y temperatura, y se abre su historial de las últimas 24h y el resumen de la semana con los días de cada mínimo y máximo.</p>
         <p><strong>Nubes normales (GeoColor):</strong> foto real del satélite, colores naturales — la más fácil de leer de un vistazo, buena para ver rápido dónde hay nubosidad.</p>
         <p><strong>Nubes infrarrojo:</strong> mide la temperatura de la punta de la nube. Nubes muy frías (blancas/brillantes) suelen ser tormentas altas y fuertes; nubes tibias (grises) son nubosidad baja, sin mucha lluvia. Funciona igual de día y de noche.</p>
       </div>
@@ -275,6 +275,7 @@
           <button id="gwStationModalClose" class="gw-station-modal-close">✕</button>
         </div>
         <div class="gw-station-modal-body">
+          <p id="gwStEstado24" class="gw-station-aviso" role="status" hidden></p>
           <div class="gw-station-chart-block">
             <span class="gw-station-chart-title">Temperatura y Punto de Rocío</span>
             <div class="gw-station-chart-container"><canvas id="gwStChartTemp"></canvas></div>
@@ -295,6 +296,27 @@
             <span class="gw-station-chart-title">Radiación Solar y UV</span>
             <div class="gw-station-chart-container"><canvas id="gwStChartSolar"></canvas></div>
           </div>
+          <section class="gw-station-week" aria-labelledby="gwStWeekTitulo">
+            <h4 id="gwStWeekTitulo" class="gw-station-week-titulo">Resumen de la semana</h4>
+            <p id="gwStWeekEstado" class="gw-station-aviso" role="status"></p>
+            <div id="gwStWeekTablas" hidden>
+              <p id="gwStWeekTotal" class="gw-station-week-total"></p>
+              <div class="gw-station-tabla-scroll">
+                <table id="gwStWeekExtremos" class="gw-station-tabla">
+                  <caption>Mínimos y máximos, con el día en que ocurrieron</caption>
+                  <thead><tr><th scope="col">Dato</th><th scope="col">Mínimo</th><th scope="col">Máximo</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+              <div class="gw-station-tabla-scroll">
+                <table id="gwStWeekDias" class="gw-station-tabla">
+                  <caption>Día por día</caption>
+                  <thead><tr><th scope="col">Día</th><th scope="col">Temp. mín</th><th scope="col">Temp. máx</th><th scope="col">Hum. mín</th><th scope="col">Hum. máx</th><th scope="col">Ráfaga km/h</th><th scope="col">Lluvia mm</th></tr></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>
@@ -313,7 +335,8 @@
   <script src="/static/js/dashboard/realtime.js?v=1"></script>
   <script src="/static/js/dashboard/history.js?v=1"></script>
   <script src="/static/js/dashboard/ui-listeners.js?v=1"></script>
-  <script src="/static/js/dashboard/map-rain.js?v=2"></script>
+  <script src="/static/js/dashboard/station-week.js?v=1"></script>
+  <script src="/static/js/dashboard/map-rain.js?v=4"></script>
   <script src="/static/js/dashboard/map-satellite.js?v=3"></script>
   <script src="/static/js/dashboard/main.js?v=1"></script>
 </body>
