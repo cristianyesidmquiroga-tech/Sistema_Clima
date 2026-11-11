@@ -43,6 +43,9 @@ const WMO = {
 let tempUnit  = localStorage.getItem('tempUnit')  || 'C';
 let timeFmt   = localStorage.getItem('timeFmt')   || '24';
 
+function setTempUnit(u) { tempUnit = u; localStorage.setItem('tempUnit', u); }
+function setTimeFmt(f)  { timeFmt  = f; localStorage.setItem('timeFmt', f); }
+
 // ─── ELEMENTOS DOM ────────────────────────────────────────────
 const els = {
   temp:        document.getElementById('gwTemp'),

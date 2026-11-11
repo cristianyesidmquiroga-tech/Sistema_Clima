@@ -167,23 +167,17 @@ def configurar_via_http(ip, ssid_casa, password_casa, servidor_ip, servidor_puer
     ]
 
     for endpoint in endpoints_config:
-        try:
-            r = requests.post(f"http://{ip}{endpoint}", data=config, timeout=5)
-            if r.status_code in [200, 302]:
-                print(f"[OK] Configuración enviada via {endpoint}")
-                return True
-        except Exception:
-            pass
-        try:
-            r = requests.get(
-                f"http://{ip}{endpoint}",
-                params=config, timeout=5
-            )
-            if r.status_code in [200, 302]:
-                print(f"[OK] Configuración enviada via GET {endpoint}")
-                return True
-        except Exception:
-            continue
+        for metodo in ('POST', 'GET'):
+            try:
+                if metodo == 'POST':
+                    r = requests.post(f"http://{ip}{endpoint}", data=config, timeout=5)
+                else:
+                    r = requests.get(f"http://{ip}{endpoint}", params=config, timeout=5)
+                if r.status_code in [200, 302]:
+                    print(f"[OK] Configuración enviada via {metodo} {endpoint}")
+                    return True
+            except Exception:
+                continue
 
     return False
 
