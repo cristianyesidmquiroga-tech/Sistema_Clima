@@ -8,6 +8,7 @@ from app.models.models import db
 from app.security import limite_dinamico_por_pais, alertar_limite_excedido
 import os
 import re
+from urllib.parse import urlsplit
 
 # Rutas validas para la redireccion canonica: solo caracteres de ruta URL.
 _RUTA_CANONICA_VALIDA = re.compile(r'\A/[A-Za-z0-9._~!$&\'()*+,;=:@%/-]*\Z')
@@ -80,7 +81,9 @@ def create_app():
             qs = request.query_string
             if qs and b'\r' not in qs and b'\n' not in qs:
                 destino += f"?{qs.decode('latin-1')}"
-            return redirect(destino, code=301)
+            # Solo redirige si el host destino es el canonico (allowlist)
+            if urlsplit(destino).netloc == 'www.nuestroclima.co':
+                return redirect(destino, code=301)
         return None
 
     # Modo mantenimiento: se activa con MODO_MANTENIMIENTO=true (sin
