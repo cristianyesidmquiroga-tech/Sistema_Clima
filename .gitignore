@@ -13,3 +13,5 @@ clima.db
 # servidor, no en el repositorio.
 archivo_datos/
 app/static/img/reporte-velez/capturas/
+
+.pytest_cache/
