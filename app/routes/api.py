@@ -39,13 +39,17 @@ EXTENSIONES_IMAGEN_VALIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 # (Guavata, Velez, Barbosa, Puente Nacional). No requieren ser propias:
 # la API de lectura de WU permite consultar cualquier estacion publica
 # con una sola API Key.
+# lat/lon fija por estacion: se usa cuando WU no reporta, para que la
+# estacion NO desaparezca del mapa (queda en gris 'sin_dato'). Las que
+# reportan traen su lat/lon en vivo. Barbosa 2 y Puente Nacional usan la
+# ubicacion aproximada del municipio (no exponen el punto exacto).
 ESTACIONES_MAPA_LLUVIAS = [
-    {"id": "IGUAVA3",  "nombre": "Guavatá (nuestra)"},
-    {"id": "IBARBO1",  "nombre": "Barbosa 1"},
-    {"id": "IBARBO2",  "nombre": "Barbosa 2"},
-    {"id": "IVLEZ2",   "nombre": "Vélez 1"},
-    {"id": "IVLEZ7",   "nombre": "Vélez 2"},
-    {"id": "IPUENT49", "nombre": "Puente Nacional"},
+    {"id": "IGUAVA3",  "nombre": "Guavatá (nuestra)", "lat": 5.935903, "lon": -73.730659},
+    {"id": "IBARBO1",  "nombre": "Barbosa 1",         "lat": 5.945381, "lon": -73.640910},
+    {"id": "IBARBO2",  "nombre": "Barbosa 2",         "lat": 5.930000, "lon": -73.620000},
+    {"id": "IVLEZ2",   "nombre": "Vélez 1",           "lat": 5.977131, "lon": -73.662934},
+    {"id": "IVLEZ7",   "nombre": "Vélez 2",           "lat": 6.010081, "lon": -73.663589},
+    {"id": "IPUENT49", "nombre": "Puente Nacional",   "lat": 5.878300, "lon": -73.677800},
 ]
 CACHE_MAPA_LLUVIAS_TTL = 90  # segundos, cacheado en Redis via @cache.cached
 
@@ -311,33 +315,34 @@ def api_mapa_lluvias():
 
     resultado = []
     for est in ESTACIONES_MAPA_LLUVIAS:
+        # La estacion SIEMPRE aparece con su ubicacion fija. Si WU no
+        # reporta (caida), queda en gris 'sin_dato' y sin valores; lluvia_rate
+        # manda el color y el parpadeo, asi que al parar de llover vuelve sola.
+        entrada = {
+            "id": est["id"], "nombre": est["nombre"],
+            "lat": est["lat"], "lon": est["lon"],
+            "lluvia_mm": None, "nivel": "sin_dato", "lluvia_rate": None,
+            "temp": None, "humedad": None, "viento": None, "obs_local": None,
+        }
         try:
             obs = _consultar_estacion_wu(est["id"])
-            if not obs:
-                continue
-            metric = obs.get("metric", {})
-            lluvia_mm = metric.get("precipTotal")
-            lluvia_rate = metric.get("precipRate")
-            resultado.append({
-                "id": est["id"],
-                "nombre": est["nombre"],
-                "lat": obs.get("lat"),
-                "lon": obs.get("lon"),
-                # lluvia_mm es el acumulado del dia (solo informativo, se
-                # muestra en el popup). El color y el parpadeo del
-                # triangulo dependen de lluvia_rate (cuanto esta
-                # lloviendo AHORA), asi que en cuanto para de llover
-                # vuelve solo a "sin_lluvia", sin esperar a medianoche.
-                "lluvia_mm": lluvia_mm,
-                "nivel": _nivel_lluvia(lluvia_rate),
-                "lluvia_rate": lluvia_rate,
-                "temp": metric.get("temp"),
-                "humedad": obs.get("humidity"),
-                "viento": metric.get("windSpeed"),
-                "obs_local": obs.get("obsTimeLocal"),
-            })
+            if obs:
+                metric = obs.get("metric", {})
+                lluvia_rate = metric.get("precipRate")
+                entrada.update({
+                    "lat": obs.get("lat") or est["lat"],
+                    "lon": obs.get("lon") or est["lon"],
+                    "lluvia_mm": metric.get("precipTotal"),
+                    "nivel": _nivel_lluvia(lluvia_rate),
+                    "lluvia_rate": lluvia_rate,
+                    "temp": metric.get("temp"),
+                    "humedad": obs.get("humidity"),
+                    "viento": metric.get("windSpeed"),
+                    "obs_local": obs.get("obsTimeLocal"),
+                })
         except Exception as e:
             print(f"[MapaLluvias] Error consultando {est['id']}: {e}")
+        resultado.append(entrada)
 
     return jsonify(resultado)
 

@@ -158,9 +158,12 @@ async function fetchMapaLluvias() {
       const rateTxt = est.lluvia_rate != null ? `${est.lluvia_rate.toFixed(1)} mm/h` : 'sin dato';
       const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
       const tempTxt = est.temp != null ? `Temp: ${est.temp}°C` : '';
+      const lluviaTxt = est.nivel === 'sin_dato'
+        ? 'Sin datos recientes'
+        : `Lluvia ahora: ${rateTxt}<br>Acumulado hoy: ${mmTxt}`;
       const graphic = new Graphic(punto, crearSimboloTriangulo(color), {
         stationId: est.id, nombre: est.nombre, id: est.id,
-        lluviaTxt: `Lluvia ahora: ${rateTxt}<br>Acumulado hoy: ${mmTxt}`, tempTxt: tempTxt,
+        lluviaTxt: lluviaTxt, tempTxt: tempTxt,
       });
       markersLayer.add(graphic);
 
