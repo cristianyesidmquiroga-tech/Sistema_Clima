@@ -336,8 +336,6 @@ async function fetchAnalisisHistorico() {
     if (historyChart) historyChart.destroy();
     if (!data.length) return;
 
-    const textColor = getChartTextColor();
-
     const labels  = data.map(d => d.fecha).reverse();
     const temps   = data.map(d => convertTemp(d.temp_avg)).reverse();
     const lluvias = data.map(d => d.lluvia).reverse();

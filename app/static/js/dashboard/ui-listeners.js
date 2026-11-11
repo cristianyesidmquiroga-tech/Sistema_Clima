@@ -32,8 +32,7 @@ document.querySelectorAll('#tempToggle .gw-toggle-btn').forEach(btn => {
 });
 
 function switchTempUnit(unit) {
-  tempUnit = unit;
-  localStorage.setItem('tempUnit', tempUnit);
+  setTempUnit(unit);
   if (unitCEl) unitCEl.classList.toggle('active', unit === 'C');
   if (unitFEl) unitFEl.classList.toggle('active', unit === 'F');
   document.querySelectorAll('#tempToggle .gw-toggle-btn').forEach(b =>
@@ -49,8 +48,7 @@ function switchTempUnit(unit) {
 // Clic en el reloj (inline) para cambiar formato de hora
 const clockEl = document.getElementById('gwClock');
 if (clockEl) clockEl.addEventListener('click', () => {
-  timeFmt = timeFmt === '24' ? '12' : '24';
-  localStorage.setItem('timeFmt', timeFmt);
+  setTimeFmt(timeFmt === '24' ? '12' : '24');
   document.querySelectorAll('#timeToggle .gw-toggle-btn').forEach(b =>
     b.classList.toggle('active', b.getAttribute('data-fmt') === timeFmt)
   );
@@ -64,8 +62,7 @@ document.querySelectorAll('#timeToggle .gw-toggle-btn').forEach(btn => {
   btn.addEventListener('click', e => {
     document.querySelectorAll('#timeToggle .gw-toggle-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
-    timeFmt = e.target.getAttribute('data-fmt');
-    localStorage.setItem('timeFmt', timeFmt);
+    setTimeFmt(e.target.getAttribute('data-fmt'));
     updateClock();
     renderMainChart();
     fetchForecast();

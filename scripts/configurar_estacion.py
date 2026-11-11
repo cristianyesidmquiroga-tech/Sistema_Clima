@@ -3,7 +3,6 @@ import subprocess
 import time
 import socket
 import requests
-import json
 import struct
 
 # ============================================================
@@ -77,7 +76,7 @@ def escanear_estacion():
                 print(f"[OK] API encontrada en {ip}/get_livedata_info")
                 return ip
         except Exception:
-            pass
+            continue
 
     print("[!] No se encontró interfaz HTTP. Intentando UDP...")
     return None
@@ -99,7 +98,7 @@ def leer_datos_http(ip):
                 print(f"[OK] Datos obtenidos desde {endpoint}")
                 return r.text
         except Exception:
-            pass
+            continue
     return None
 
 
@@ -168,23 +167,17 @@ def configurar_via_http(ip, ssid_casa, password_casa, servidor_ip, servidor_puer
     ]
 
     for endpoint in endpoints_config:
-        try:
-            r = requests.post(f"http://{ip}{endpoint}", data=config, timeout=5)
-            if r.status_code in [200, 302]:
-                print(f"[OK] Configuración enviada via {endpoint}")
-                return True
-        except Exception:
-            pass
-        try:
-            r = requests.get(
-                f"http://{ip}{endpoint}",
-                params=config, timeout=5
-            )
-            if r.status_code in [200, 302]:
-                print(f"[OK] Configuración enviada via GET {endpoint}")
-                return True
-        except Exception:
-            pass
+        for metodo in ('POST', 'GET'):
+            try:
+                if metodo == 'POST':
+                    r = requests.post(f"http://{ip}{endpoint}", data=config, timeout=5)
+                else:
+                    r = requests.get(f"http://{ip}{endpoint}", params=config, timeout=5)
+                if r.status_code in [200, 302]:
+                    print(f"[OK] Configuración enviada via {metodo} {endpoint}")
+                    return True
+            except Exception:
+                continue
 
     return False
 
