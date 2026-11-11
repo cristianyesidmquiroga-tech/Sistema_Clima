@@ -69,7 +69,7 @@ def escanear_estacion():
             print(f"[OK] Estación encontrada en {ip} (código {r.status_code})")
             return ip
         except Exception:
-            continue
+            pass
         try:
             r = requests.get(f"http://{ip}/get_livedata_info", timeout=3)
             if r.status_code == 200:
@@ -173,7 +173,7 @@ def configurar_via_http(ip, ssid_casa, password_casa, servidor_ip, servidor_puer
                 print(f"[OK] Configuración enviada via {endpoint}")
                 return True
         except Exception:
-            continue
+            pass
         try:
             r = requests.get(
                 f"http://{ip}{endpoint}",
