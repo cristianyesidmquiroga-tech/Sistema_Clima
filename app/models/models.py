@@ -73,8 +73,7 @@ class Lectura(db.Model):
             'uv_index': self.uv_index,
             'radiacion_solar': self.radiacion_solar,
             'punto_rocio': self.punto_rocio,
-            'sensacion_termica': self.sensacion_termica,
-            'passkey': self.passkey
+            'sensacion_termica': self.sensacion_termica
         }
 
 
@@ -318,7 +317,7 @@ def guardar_lectura(datos_raw):
             radiacion_solar=radiacion_solar,
             punto_rocio=fahrenheit_a_celsius(get_field(datos_raw, 'dewptf', 'dewpoint')),
             sensacion_termica=sensacion_calibrada,
-            passkey=datos_raw.get('PASSKEY', 'desconocido')
+            passkey='estacion'
         )
 
         db.session.add(nueva_lectura)

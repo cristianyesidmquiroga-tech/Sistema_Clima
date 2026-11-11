@@ -175,12 +175,13 @@ def recibir_datos():
     if not datos:
         return "No data", 400
 
-    if STATION_PASSKEY and not hmac.compare_digest(str(datos.get('PASSKEY', '')), STATION_PASSKEY):
+    if not STATION_PASSKEY or not hmac.compare_digest(str(datos.get('PASSKEY', '')), STATION_PASSKEY):
         return "Forbidden", 403
 
     print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Datos recibidos de la estación:")
     for k, v in datos.items():
-        print(f"  {k}: {v}")
+        if k != 'PASSKEY':
+            print(f"  {k}: {v}")
 
     guardar_lectura(datos)
     return "OK", 200
