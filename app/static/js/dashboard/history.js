@@ -93,11 +93,28 @@ function obtenerOMLookup() {
   return { hourly, omLookup };
 }
 
+function restaurarOCentrarAhora(container, scrollPrev) {
+  // Primera carga: deja visible 'Ahora' (centrado) en vez de arrancar en
+  // las horas viejas. En los refrescos conserva donde estaba el usuario.
+  if (!container.dataset.centradoAhora && container.clientWidth) {
+    const hoy = container.querySelector('.today');
+    if (hoy) {
+      const cR = container.getBoundingClientRect();
+      const hR = hoy.getBoundingClientRect();
+      container.scrollLeft += (hR.left - cR.left) - (container.clientWidth - hoy.offsetWidth) / 2;
+      container.dataset.centradoAhora = '1';
+      return;
+    }
+  }
+  container.scrollLeft = scrollPrev;
+}
+
 function renderColumnCards(container, aligned, getValue, getLabel, getForecast) {
   const now = new Date();
   const nowKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
   const hours = getDisplayHours();
   const { hourly, omLookup } = getForecast ? obtenerOMLookup() : { hourly: null, omLookup: {} };
+  const scrollPrev = container.scrollLeft;
   container.innerHTML = '';
   container.style.display = 'flex';
   aligned.forEach((d, i) => {
@@ -138,6 +155,7 @@ function renderColumnCards(container, aligned, getValue, getLabel, getForecast) 
     }
     container.appendChild(col);
   });
+  restaurarOCentrarAhora(container, scrollPrev);
 }
 
 function renderMainChart() {
@@ -231,6 +249,7 @@ function renderForecastCards() {
   }
 
   const ultimoReal = estacionAlineados.filter(d => d && !d.estimado).pop() || null;
+  const scrollPrev = els.forecastRow.scrollLeft;
   els.forecastRow.innerHTML = '';
 
   displayHours.forEach((h, i) => {
@@ -284,6 +303,7 @@ function renderForecastCards() {
       </div>`;
     els.forecastRow.appendChild(col);
   });
+  restaurarOCentrarAhora(els.forecastRow, scrollPrev);
 }
 
 async function fetchForecast() {
