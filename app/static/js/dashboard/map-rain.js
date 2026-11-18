@@ -61,6 +61,7 @@ function initRainMap() {
       // Un solo listener para toda la vida del mapa (zoom, pan y resize),
       // no registrado de nuevo en cada loadSatelliteLayer().
       rainMap.on("extent-change", actualizarVisibilidadSatelite);
+      capaSatelitePorDefectoSegunHora();
       loadSatelliteLayer();
       fetchMapaLluvias();
     }
