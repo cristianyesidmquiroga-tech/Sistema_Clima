@@ -96,17 +96,20 @@ function obtenerOMLookup() {
 function restaurarOCentrarAhora(container, scrollPrev) {
   // Primera carga: deja visible 'Ahora' (centrado) en vez de arrancar en
   // las horas viejas. En los refrescos conserva donde estaba el usuario.
-  if (!container.dataset.centradoAhora && container.clientWidth) {
-    const hoy = container.querySelector('.today');
-    if (hoy) {
-      const cR = container.getBoundingClientRect();
-      const hR = hoy.getBoundingClientRect();
-      container.scrollLeft += (hR.left - cR.left) - (container.clientWidth - hoy.offsetWidth) / 2;
-      container.dataset.centradoAhora = '1';
-      return;
-    }
+  // El contenedor usa scroll-behavior:smooth; se fuerza instantaneo para
+  // que scrollLeft se aplique de una (si no, anima y queda en 0).
+  const comportamiento = container.style.scrollBehavior;
+  container.style.scrollBehavior = 'auto';
+  const hoy = container.querySelector('.today');
+  if (!container.dataset.centradoAhora && container.clientWidth && hoy) {
+    const cR = container.getBoundingClientRect();
+    const hR = hoy.getBoundingClientRect();
+    container.scrollLeft += (hR.left - cR.left) - (container.clientWidth - hoy.offsetWidth) / 2;
+    container.dataset.centradoAhora = '1';
+  } else {
+    container.scrollLeft = scrollPrev;
   }
-  container.scrollLeft = scrollPrev;
+  container.style.scrollBehavior = comportamiento;
 }
 
 function renderColumnCards(container, aligned, getValue, getLabel, getForecast) {
