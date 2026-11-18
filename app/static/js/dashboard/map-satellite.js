@@ -171,7 +171,7 @@ async function loadSatelliteLayer() {
   const horaEl = document.getElementById('gwSatHora');
   if (horaEl) {
     horaEl.textContent = 'Imagen: ' + new Date(tiempo).toLocaleTimeString(
-      'es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+      'es-CO', { hour: '2-digit', minute: '2-digit' });
   }
 
   const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/\${level}/\${row}/\${col}.png`;
