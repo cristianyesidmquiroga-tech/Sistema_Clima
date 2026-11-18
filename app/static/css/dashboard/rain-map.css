@@ -45,6 +45,7 @@
   user-select: none;
 }
 .gw-radar-toggle input { cursor: pointer; }
+.gw-sat-hora { opacity: 0.85; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .gw-radar-toggle select {
   background: rgba(0,0,0,0.2);
   color: var(--text-primary);

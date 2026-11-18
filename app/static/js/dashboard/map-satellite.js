@@ -136,6 +136,16 @@ let satSinDatosSeguidos = 0;
 const SAT_REINTENTO_MS = 90 * 1000;
 const SAT_REINTENTOS_MAX = 3;
 
+function capaSatelitePorDefectoSegunHora() {
+  // De madrugada/noche GeoColor sale oscuro (render nocturno con luces de
+  // ciudad); el infrarrojo muestra nubes util 24/7, asi que se deja por
+  // defecto fuera del horario diurno de la region (Colombia = UTC-5).
+  const sel = document.getElementById('gwSatSelect');
+  if (!sel) return;
+  const horaCol = (new Date().getUTCHours() + 19) % 24;
+  sel.value = (horaCol >= 7 && horaCol < 18) ? 'geocolor' : 'infrared';
+}
+
 async function loadSatelliteLayer() {
   if (!esriMods || !rainMap) return;
   if (satRetryTimer) { clearTimeout(satRetryTimer); satRetryTimer = null; }
@@ -157,6 +167,12 @@ async function loadSatelliteLayer() {
     return;
   }
   satSinDatosSeguidos = 0;
+
+  const horaEl = document.getElementById('gwSatHora');
+  if (horaEl) {
+    horaEl.textContent = 'Imagen: ' + new Date(tiempo).toLocaleTimeString(
+      'es-CO', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Bogota' });
+  }
 
   const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/\${level}/\${row}/\${col}.png`;
 
