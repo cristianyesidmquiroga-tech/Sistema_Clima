@@ -59,3 +59,21 @@ jobs:
 
       - name: Ejecutar pruebas
         run: python -m pytest tests -v
+
+  dependencias:
+    name: Dependencias (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar pip-audit
+        run: python -m pip install --upgrade pip pip-audit
+
+      - name: Auditar vulnerabilidades conocidas
+        run: pip-audit -r requirements.txt
