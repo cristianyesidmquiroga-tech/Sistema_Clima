@@ -1,5 +1,7 @@
 # Sistema de monitoreo del clima (Flask)
 
+[![CI](https://github.com/cristianyesidmquiroga-tech/Sistema_Clima/actions/workflows/pruebas.yml/badge.svg?branch=main)](https://github.com/cristianyesidmquiroga-tech/Sistema_Clima/actions/workflows/pruebas.yml)
+
 <details>
 <summary><b>Read this in English</b></summary>
 
