@@ -60,6 +60,8 @@ Cristian Muñoz · [GitHub](https://github.com/cristianyesidmquiroga-tech)
 
 </details>
 
+![Página de inicio de nuestroclima.co](docs/capturas/inicio.webp)
+
 Sistema web que recoge, guarda y publica datos del clima de una región de Colombia: estaciones meteorológicas propias y públicas, estaciones hidrológicas nacionales (FEWS/IDEAM) e imágenes satelitales diarias de la NASA. Ofrece un panel público, un mapa de lluvias y un reporte semanal de la región, y exporta datos a PDF y Excel. Todo corre con Docker Compose.
 
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
