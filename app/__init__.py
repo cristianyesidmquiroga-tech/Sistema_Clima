@@ -73,7 +73,8 @@ def create_app():
     # exacto, para no afectar localhost/desarrollo local.
     @app.before_request
     def _forzar_www():
-        if request.host.split(':')[0] == 'nuestroclima.co':
+        # El host es case-insensitive (RFC 3986), por eso se normaliza.
+        if request.host.split(':')[0].lower() == 'nuestroclima.co':
             # El host destino es fijo; la ruta se valida contra una lista de
             # caracteres de ruta para no arrastrar nada raro a la redireccion.
             ruta = request.path if _RUTA_CANONICA_VALIDA.match(request.path) else '/'
