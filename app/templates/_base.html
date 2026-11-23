@@ -49,5 +49,6 @@
 
   <script src="/static/js/site/site.js?v=1"></script>
   {% block js_extra %}{% endblock %}
+  {% if cloudflare_token %}<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cloudflare_token }}"}'></script>{% endif %}
 </body>
 </html>

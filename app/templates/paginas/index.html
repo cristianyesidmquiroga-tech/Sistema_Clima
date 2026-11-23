@@ -337,5 +337,6 @@
   <script src="/static/js/dashboard/map-satellite.js?v=3"></script>
   <script src="/static/js/dashboard/map-defer.js?v=1"></script>
   <script src="/static/js/dashboard/main.js?v=2"></script>
+  {% if cloudflare_token %}<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cloudflare_token }}"}'></script>{% endif %}
 </body>
 </html>

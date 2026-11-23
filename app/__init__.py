@@ -142,7 +142,10 @@ def create_app():
     @app.context_processor
     def _inyectar_anio():
         from datetime import datetime
-        return {"anio_actual": datetime.utcnow().year}
+        return {
+            "anio_actual": datetime.utcnow().year,
+            "cloudflare_token": os.environ.get('CLOUDFLARE_ANALYTICS_TOKEN', ''),
+        }
 
     @app.template_filter('fecha_corta')
     def _fecha_corta(fecha_iso):
@@ -170,11 +173,11 @@ def create_app():
             # 'unsafe-eval' es necesario porque el cargador de modulos Dojo
             # (usado internamente por la ArcGIS API for JavaScript 3.x) lo
             # requiere para funcionar; sin esto el mapa no carga.
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.arcgis.com https://static.cloudflareinsights.com; "
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
             "font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; "
             "img-src 'self' data: https://*.tile.openstreetmap.org https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
-            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov"
+            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov https://cloudflareinsights.com"
         )
         return response
 
