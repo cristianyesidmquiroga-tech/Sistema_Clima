@@ -30,5 +30,11 @@ def test_redireccion_canonica_apex_a_www(client):
     assert r.headers['Location'].startswith('https://www.nuestroclima.co/reporte-velez')
 
 
+def test_redireccion_canonica_con_host_en_mayusculas(client):
+    r = client.get('/reporte-velez', base_url='http://NUESTROCLIMA.CO')
+    assert r.status_code == 301
+    assert r.headers['Location'].startswith('https://www.nuestroclima.co/reporte-velez')
+
+
 def test_localhost_no_redirige(client):
     assert client.get('/', base_url='http://localhost').status_code == 200
