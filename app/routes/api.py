@@ -476,14 +476,15 @@ def api_noticias():
 
 # ─── VISTAS DEL SITIO PUBLICO ───────────────────────────────────
 @bp.route('/')
+def dashboard():
+    return render_template('paginas/index.html')
+
+@bp.route('/inicio')
 def inicio():
     return render_template('paginas/inicio.html', activo='inicio')
 
 @bp.route('/mapa-estaciones')
 def mapa_estaciones():
-    # Mismo dashboard tecnico, con su propia URL dentro del nuevo menu del
-    # sitio. '/' es la landing publica; esta es la unica forma de llegar
-    # al mapa.
     return render_template('paginas/index.html')
 
 @bp.route('/reporte-velez')
