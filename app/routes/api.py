@@ -7,6 +7,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
 from app import limiter, cache
+from app.reenvio import reenviar_al_piloto
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
@@ -189,6 +190,7 @@ def recibir_datos():
             print(f"  {k}: {v}")
 
     guardar_lectura(datos)
+    reenviar_al_piloto(datos)
     return "OK", 200
 
 
