@@ -59,6 +59,9 @@ services:
       SMTP_PASS: ${SMTP_PASS:-}
       EMAIL_TO: ${EMAIL_TO:-}
       EMAIL_FROM: ${EMAIL_FROM:-}
+      CLOUDFLARE_ANALYTICS_TOKEN: ${CLOUDFLARE_ANALYTICS_TOKEN:-}
+      PILOTO_INGESTA_URL: ${PILOTO_INGESTA_URL:-}
+      PILOTO_PASSKEY: ${PILOTO_PASSKEY:-}
     expose:
       - "8080"
     ports:
