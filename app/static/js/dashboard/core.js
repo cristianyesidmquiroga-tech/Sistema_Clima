@@ -117,6 +117,16 @@ function updateClock() {
 }
 setInterval(updateClock, 1000);
 
+// Con la pestaña oculta no se piden datos; al volver se actualiza si ya tocaba.
+function cadaCiertoTiempo(fn, ms) {
+  let ultima = Date.now();
+  const correr = () => { ultima = Date.now(); fn(); };
+  setInterval(() => { if (!document.hidden && Date.now() - ultima >= ms * 0.9) correr(); }, ms);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && Date.now() - ultima >= ms) correr();
+  });
+}
+
 const STATUS_LABELS = {
   real: 'Estación: En línea',
   estimado: 'Estación sin señal — mostrando estimado',

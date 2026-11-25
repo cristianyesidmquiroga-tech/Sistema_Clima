@@ -26,8 +26,8 @@
     await cargarArcGIS();
     initRainMap();
     fetchMapaLluvias();
-    setInterval(fetchMapaLluvias, 90000);
-    setInterval(loadSatelliteLayer, 10 * 60000);
+    cadaCiertoTiempo(fetchMapaLluvias, 90000);
+    cadaCiertoTiempo(loadSatelliteLayer, 10 * 60000);
   }
 
   var mapEl = document.getElementById('gwRainMap');
