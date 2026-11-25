@@ -33,7 +33,6 @@ def salud():
 # ─── CONFIGURACION / CONSTANTES ───────────────────────────────
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
 ADMIN_PASSKEY = os.environ.get('ADMIN_PASSKEY', '')
-ENABLE_TEST_ENDPOINT = os.environ.get('ENABLE_TEST_ENDPOINT', 'false').lower() == 'true'
 WU_API_KEY = os.environ.get('WU_API_KEY', '')
 
 FINCA_LAT = 5.96
@@ -292,35 +291,6 @@ def api_stats_comparative():
         "datos": stats,
         "analisis": analisis_texto
     })
-
-@bp.route('/api/test')
-@limiter.limit("30 per hour")
-def api_test():
-    if not ENABLE_TEST_ENDPOINT:
-        return jsonify({"error": "Endpoint deshabilitado"}), 404
-
-    datos_prueba = {
-        'tempf': '82.5',
-        'tempinf': '71.0',
-        'humidity': '45',
-        'humidityin': '63',
-        'windspeedmph': '3.4',
-        'windgustmph': '0.7',
-        'winddir': '54',
-        'rainratein': '0.0',
-        'dailyrainin': '0.57',
-        'eventrainin': '0.0',
-        'baromrelin': '29.92',
-        'baromabsin': '28.00',
-        'uv': '8',
-        'solarradiation': '940',
-        'dewptf': '59.0',
-        'feelslikef': '82.3',
-        'PASSKEY': 'TEST-SAINLOGIC'
-    }
-    guardar_lectura(datos_prueba)
-    return jsonify({"mensaje": "Datos de prueba guardados OK"})
-
 
 # ─── API: MAPA DE LLUVIAS Y ESTACIONES REGIONALES ──────────────
 # Dos decimales (~1 km): ubica el municipio sin senalar la casa del dueno.
