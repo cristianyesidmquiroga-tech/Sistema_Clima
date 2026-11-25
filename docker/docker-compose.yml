@@ -1,3 +1,10 @@
+# Cada servicio guarda como mucho 3 archivos de 10 MB de log; sin esto el disco del VPS se llena.
+x-logs: &logs
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:18
@@ -15,6 +22,7 @@ services:
       timeout: 5s
       retries: 5
     mem_limit: 512m
+    logging: *logs
     cpus: 1.0
 
   redis:
@@ -28,6 +36,7 @@ services:
       timeout: 5s
       retries: 5
     mem_limit: 160m
+    logging: *logs
     cpus: 0.25
 
   app:
@@ -78,6 +87,7 @@ services:
       redis:
         condition: service_healthy
     mem_limit: 512m
+    logging: *logs
     cpus: 1.0
 
   poller:
@@ -102,6 +112,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
   historial_poller:
@@ -129,6 +140,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
   lecturas_fews_poller:
@@ -155,6 +167,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
   publicador_velez:
@@ -181,6 +194,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
   capturas_mapas_poller:
@@ -210,6 +224,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
   reporter:
@@ -238,6 +253,7 @@ services:
       retries: 3
       start_period: 120s
     mem_limit: 128m
+    logging: *logs
     cpus: 0.25
 
 volumes:
