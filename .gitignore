@@ -6,7 +6,6 @@ server.pid
 server_log.txt
 clima.db
 *.sqlite
-.claude/settings.local.json
 
 # Datos generados en runtime (capturas de mapas comprimidas, ver
 # docs/archivo_capturas_mapas.md) - no es codigo, vive en el volumen del
@@ -18,3 +17,6 @@ app/static/img/reporte-velez/capturas/
 
 # Carpeta instance de Flask (DB local, nunca al repo)
 instance/
+
+# Configuracion local del editor/asistente, nunca al repo
+.claude/
