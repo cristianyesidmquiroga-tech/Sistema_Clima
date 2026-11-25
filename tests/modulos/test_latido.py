@@ -43,7 +43,7 @@ def test_cada_proceso_espera_con_latido(nombre):
 
 
 def test_todos_los_servicios_tienen_healthcheck():
-    texto = (RAIZ / "docker-compose.yml").read_text(encoding="utf-8")
+    texto = (RAIZ / "docker" / "docker-compose.yml").read_text(encoding="utf-8")
     servicios = texto.split("services:\n", 1)[1].split("\nvolumes:\n", 1)[0]
     bloques = re.split(r"\n(?=  [a-z_]+:\n)", "\n" + servicios)
     nombres = {b.split(":", 1)[0].strip(): b for b in bloques if b.strip()}
