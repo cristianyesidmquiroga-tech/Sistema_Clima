@@ -10,7 +10,7 @@ Hoy no hay copia fuera del volumen `pgdata`. Falta elegir dónde guardarlas fuer
 
 ### Proxy de Cloudflare (nube naranja)
 Antes de activarlo, la app debe leer la IP real; si no, todos los visitantes comparten el límite de peticiones y salen como extranjeros.
-1. Código (PR aparte): tomar `CF-Connecting-IP` solo si la petición llega desde los rangos de Cloudflare, y usar `CF-IPCountry` en vez de ip-api.com.
+1. Hecho en el PR #128 (`app/cloudflare.py`): la app ya toma `CF-Connecting-IP` y `CF-IPCountry` solo si la petición llega desde los rangos de Cloudflare. Desplegarlo en Coolify antes del paso 3.
 2. En Cloudflare: SSL/TLS en Full (strict); dejar apagados Always Use HTTPS (Coolify ya redirige) y Bot Fight Mode (bloquea la estación).
 3. Activar el proxy en los registros A de nuestroclima.co.
 4. Opcional: cerrar los puertos 80 y 443 del VPS para que solo entre tráfico de Cloudflare. Esto afecta a Coolify y a las otras apps del servidor.
