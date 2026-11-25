@@ -7,6 +7,19 @@ from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
+COLOMBIA = 'America/Bogota'
+
+
+# Los timestamps se guardan en UTC sin zona; los dias se cuentan en hora de Colombia.
+def _hora_colombia(columna):
+    return func.timezone(COLOMBIA, func.timezone('UTC', columna))
+
+
+def inicio_hoy_colombia_utc(ahora_utc=None):
+    ahora_utc = ahora_utc or datetime.utcnow()
+    local = ahora_utc - timedelta(hours=5)
+    return datetime.combine(local.date(), datetime.min.time()) + timedelta(hours=5)
+
 
 # ─── MODELOS (tablas) ──────────────────────────────────────────
 class Lectura(db.Model):
@@ -359,7 +372,7 @@ def obtener_stats_dia():
         func.min(Lectura.humedad_exterior).label('hum_min'),
         func.max(Lectura.velocidad_viento).label('viento_max'),
         func.max(Lectura.rafaga_viento).label('rafaga_max'),
-        func.max(Lectura.lluvia_dia).label('lluvia_total'),
+        func.max(Lectura.lluvia_dia).filter(Lectura.timestamp >= inicio_hoy_colombia_utc()).label('lluvia_total'),
         func.max(Lectura.uv_index).label('uv_max')
     ).filter(Lectura.timestamp >= limite).first()
 
@@ -381,19 +394,19 @@ def obtener_stats_agrupadas():
     """Obtiene agregaciones por semana y mes usando to_char (PostgreSQL)"""
 
     mensual = db.session.query(
-        func.to_char(Lectura.timestamp, 'YYYY-MM').label('mes'),
+        func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM').label('mes'),
         func.max(Lectura.temp_exterior).label('temp_max'),
         func.min(Lectura.temp_exterior).label('temp_min'),
         func.max(Lectura.lluvia_dia).label('lluvia_max_diaria'),
         func.sum(Lectura.lluvia_hora).label('estimacion_lluvia_total')
-    ).group_by('mes').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM').desc()).limit(12).all()
+    ).group_by('mes').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM').desc()).limit(12).all()
 
     semanal = db.session.query(
-        func.to_char(Lectura.timestamp, 'IYYY-IW').label('semana'),
+        func.to_char(_hora_colombia(Lectura.timestamp), 'IYYY-IW').label('semana'),
         func.max(Lectura.temp_exterior).label('temp_max'),
         func.min(Lectura.temp_exterior).label('temp_min'),
         func.max(Lectura.lluvia_dia).label('lluvia_max_diaria')
-    ).group_by('semana').order_by(func.to_char(Lectura.timestamp, 'IYYY-IW').desc()).limit(12).all()
+    ).group_by('semana').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'IYYY-IW').desc()).limit(12).all()
 
     return {
         "mensual": [
@@ -455,7 +468,7 @@ def obtener_datos_por_fecha(fecha_str):
         func.min(Lectura.humedad_exterior).label('hum_min'),
         func.max(Lectura.velocidad_viento).label('viento_max'),
         func.max(Lectura.rafaga_viento).label('rafaga_max'),
-        func.max(Lectura.lluvia_dia).label('lluvia_total'),
+        func.max(Lectura.lluvia_dia).filter(Lectura.timestamp >= inicio_hoy_colombia_utc()).label('lluvia_total'),
         func.max(Lectura.uv_index).label('uv_max'),
     ).filter(Lectura.timestamp >= inicio, Lectura.timestamp < fin).first()
 
@@ -497,7 +510,7 @@ def obtener_resumen_semana():
         ).filter(Lectura.timestamp >= limite).one()
 
         lluvia_por_dia = db.session.query(
-            func.to_char(Lectura.timestamp, 'YYYY-MM-DD').label('fecha'),
+            func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM-DD').label('fecha'),
             func.max(Lectura.lluvia_dia).label('lluvia_dia_max')
         ).filter(Lectura.timestamp >= limite).group_by('fecha').all()
         lluvia_semana = sum((fila.lluvia_dia_max or 0) for fila in lluvia_por_dia)
@@ -524,28 +537,28 @@ def obtener_analisis_historico(tipo="dias"):
     try:
         if tipo == "dias":
             query = db.session.query(
-                func.to_char(Lectura.timestamp, 'YYYY-MM-DD').label('fecha'),
+                func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM-DD').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM-DD').desc()).limit(30).all()
+            ).group_by('fecha').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM-DD').desc()).limit(30).all()
         elif tipo == "semanas":
             query = db.session.query(
-                func.to_char(Lectura.timestamp, 'IYYY-IW').label('fecha'),
+                func.to_char(_hora_colombia(Lectura.timestamp), 'IYYY-IW').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'IYYY-IW').desc()).limit(12).all()
+            ).group_by('fecha').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'IYYY-IW').desc()).limit(12).all()
         elif tipo == "meses":
             query = db.session.query(
-                func.to_char(Lectura.timestamp, 'YYYY-MM').label('fecha'),
+                func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY-MM').desc()).limit(12).all()
+            ).group_by('fecha').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY-MM').desc()).limit(12).all()
         elif tipo == "años":
             query = db.session.query(
-                func.to_char(Lectura.timestamp, 'YYYY').label('fecha'),
+                func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY').label('fecha'),
                 func.avg(Lectura.temp_exterior).label('temp_avg'),
                 func.max(Lectura.lluvia_dia).label('lluvia_max')
-            ).group_by('fecha').order_by(func.to_char(Lectura.timestamp, 'YYYY').desc()).limit(5).all()
+            ).group_by('fecha').order_by(func.to_char(_hora_colombia(Lectura.timestamp), 'YYYY').desc()).limit(5).all()
         else:
             return []
 
@@ -613,11 +626,11 @@ def crear_noticia(tipo, titulo, texto, imagen_url=None):
 
 # ─── NOTICIAS: CONSULTA ───────────────────────────────────────────
 def obtener_noticias_hoy():
-    """Noticias publicadas hoy (UTC), para la landing publica. No se
+    """Noticias publicadas hoy (hora de Colombia), para la landing publica. No se
     borra nada: las noticias de dias anteriores quedan disponibles para
     siempre en la base de datos como archivo historico (ver
     obtener_noticias_historial)."""
-    inicio_hoy = datetime.combine(datetime.utcnow().date(), datetime.min.time())
+    inicio_hoy = inicio_hoy_colombia_utc()
     filas = Noticia.query.filter(
         Noticia.fecha_publicacion >= inicio_hoy
     ).order_by(Noticia.fecha_publicacion.desc()).all()
