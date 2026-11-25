@@ -5,13 +5,14 @@ esos limites, para que se pueda revisar si es un ataque o solo una
 persona comun con mala suerte.
 """
 import hmac
-import os
-import time
 import ipaddress
+import os
 import smtplib
+import time
 from email.message import EmailMessage
 
 import requests
+from flask import has_request_context, request
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
@@ -54,6 +55,8 @@ def obtener_pais(ip):
     consideran de confianza y no se consultan."""
     if not ip or _es_ip_privada(ip):
         return "LOCAL"
+    if has_request_context() and request.remote_addr == ip and request.environ.get('nuestroclima.pais'):
+        return request.environ['nuestroclima.pais']
 
     ahora = time.time()
     cacheado = _CACHE_PAIS.get(ip)
