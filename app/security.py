@@ -4,6 +4,7 @@ mas estrictos fuera de Colombia) y alerta por correo cuando alguien supera
 esos limites, para que se pueda revisar si es un ataque o solo una
 persona comun con mala suerte.
 """
+import hmac
 import os
 import time
 import ipaddress
@@ -31,6 +32,13 @@ CACHE_PAIS_TTL = 24 * 3600
 # un ataque: como mucho un correo por IP cada 30 minutos.
 _ULTIMA_ALERTA_POR_IP = {}
 ALERTA_COOLDOWN = 30 * 60
+
+
+def clave_valida(recibida, esperada):
+    # En bytes: compare_digest con str lanza TypeError si la clave trae tildes.
+    if not esperada or recibida is None:
+        return False
+    return hmac.compare_digest(str(recibida).encode(), esperada.encode())
 
 
 def _es_ip_privada(ip):

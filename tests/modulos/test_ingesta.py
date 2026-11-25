@@ -45,3 +45,23 @@ def test_actual_no_expone_la_passkey(client):
 def test_la_passkey_no_se_guarda_en_la_base(client, sesion):
     client.post('/data/report/', data={**DATOS, 'PASSKEY': 'clave-de-pruebas'})
     assert Lectura.query.one().passkey != 'clave-de-pruebas'
+
+
+def test_clave_con_tildes_responde_403_y_no_500(client):
+    r = client.post('/data/report/', data={**DATOS, 'PASSKEY': 'ñandú'})
+    assert r.status_code == 403
+
+
+def test_si_no_se_guarda_responde_500_y_no_reenvia(client, monkeypatch):
+    import app.routes.api as api
+    reenvios = []
+    monkeypatch.setattr(api, 'guardar_lectura', lambda datos: False)
+    monkeypatch.setattr(api, 'reenviar_al_piloto', reenvios.append)
+    r = client.post('/data/report/', data={**DATOS, 'PASSKEY': 'clave-de-pruebas'})
+    assert r.status_code == 500
+    assert reenvios == []
+
+
+def test_sensacion_de_cero_grados_se_guarda(client, sesion):
+    client.post('/data/report/', data={**DATOS, 'feelslikef': '32', 'PASSKEY': 'clave-de-pruebas'})
+    assert Lectura.query.one().sensacion_termica is not None
