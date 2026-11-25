@@ -232,6 +232,38 @@ services:
     logging: *logs
     cpus: 0.25
 
+  sellador:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: clima_sellador
+    restart: unless-stopped
+    command: ["python", "scripts/sellador_horas.py"]
+    environment:
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-clima_db}
+      SNA_RPC_URL: ${SNA_RPC_URL:-}
+      SNA_RPC_USUARIO: ${SNA_RPC_USUARIO:-}
+      SNA_RPC_CLAVE: ${SNA_RPC_CLAVE:-}
+      SNA_REGISTRO: ${SNA_REGISTRO:-}
+      SNA_LLAVE_SELLADORA: ${SNA_LLAVE_SELLADORA:-}
+      SELLO_SAL: ${SELLO_SAL:-}
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "7800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    mem_limit: 192m
+    logging: *logs
+    cpus: 0.25
+
   reporter:
     build:
       context: ..

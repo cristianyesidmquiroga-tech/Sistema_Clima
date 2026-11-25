@@ -47,7 +47,7 @@ def test_dependencias_en_requisitos_y_raiz_sin_sueltos():
 def test_cada_servicio_rota_sus_logs():
     texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
     servicios = re.findall(r'^  ([a-z_]+):\n    (?:image|build)', texto, re.M)
-    assert len(servicios) == texto.count('    logging: *logs') == 9
+    assert len(servicios) == texto.count('    logging: *logs') == 10
     assert 'max-size: "10m"' in texto
 
 
