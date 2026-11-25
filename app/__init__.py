@@ -185,7 +185,8 @@ def create_app():
             "style-src 'self' 'unsafe-inline' https://js.arcgis.com https://fonts.googleapis.com; "
             "font-src 'self' data: https://fonts.gstatic.com https://js.arcgis.com; "
             "img-src 'self' data: https://*.tile.openstreetmap.org https://js.arcgis.com https://gibs.earthdata.nasa.gov; "
-            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov https://cloudflareinsights.com"
+            "connect-src 'self' https://js.arcgis.com https://api.open-meteo.com https://gibs.earthdata.nasa.gov https://cloudflareinsights.com; "
+            "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         )
         return response
 
