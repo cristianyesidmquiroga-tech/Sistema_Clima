@@ -30,10 +30,14 @@ function filaExtremos(nombre, unidad, minimo, maximo) {
   return tr;
 }
 
+function enUnidad(extremo) {
+  return extremo ? { ...extremo, valor: convertTemp(extremo.valor) } : extremo;
+}
+
 function llenarExtremos(extremos) {
   const cuerpo = document.querySelector('#gwStWeekExtremos tbody');
   cuerpo.replaceChildren(
-    filaExtremos('Temperatura', '°C', extremos.temperatura.min, extremos.temperatura.max),
+    filaExtremos('Temperatura', tempLabel(), enUnidad(extremos.temperatura.min), enUnidad(extremos.temperatura.max)),
     filaExtremos('Humedad', '%', extremos.humedad.min, extremos.humedad.max),
     filaExtremos('Ráfaga de viento', 'km/h', null, extremos.rafaga.max),
     filaExtremos('Presión', 'hPa', extremos.presion.min, extremos.presion.max),
@@ -47,7 +51,7 @@ function llenarDias(porDia) {
   const dato = (v, u) => (v == null ? '--' : `${v}${u}`);
   cuerpo.replaceChildren(...porDia.map((d) => {
     const tr = document.createElement('tr');
-    tr.append(celda('th', textoDia(d.dia)), celda('td', dato(d.temp_min, '°')), celda('td', dato(d.temp_max, '°')),
+    tr.append(celda('th', textoDia(d.dia)), celda('td', dato(tempNumero(d.temp_min), '°')), celda('td', dato(tempNumero(d.temp_max), '°')),
       celda('td', dato(d.humedad_min, '%')), celda('td', dato(d.humedad_max, '%')),
       celda('td', dato(d.rafaga_max, '')), celda('td', dato(d.lluvia_mm, '')));
     tr.firstChild.scope = 'row';

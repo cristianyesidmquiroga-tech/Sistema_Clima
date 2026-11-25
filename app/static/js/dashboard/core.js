@@ -68,6 +68,15 @@ function convertTemp(celsius) {
 }
 function tempLabel() { return tempUnit === 'F' ? '°F' : '°C'; }
 
+// Sin dato se muestra -- y no un 0 que parece una medicion real.
+function tempOGuion(celsius) {
+  if (celsius === null || celsius === undefined || celsius === '') return '--';
+  return `${convertTemp(celsius)} ${tempLabel()}`;
+}
+function tempNumero(celsius) {
+  return celsius === null || celsius === undefined ? null : parseFloat(convertTemp(celsius));
+}
+
 function formatTime(date) {
   const h = date.getHours();
   const m = date.getMinutes().toString().padStart(2, '0');

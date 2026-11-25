@@ -198,12 +198,6 @@ function updateAlerts(data) {
   return alertas;
 }
 
-// Sin dato se muestra -- y no un 0 que parece una medicion real.
-function tempOGuion(celsius) {
-  if (celsius === null || celsius === undefined || celsius === '') return '--';
-  return `${convertTemp(celsius)} ${tempLabel()}`;
-}
-
 function renderRealTime(data) {
   const alertas = updateAlerts(data);
   const cond = getCondition(data);
