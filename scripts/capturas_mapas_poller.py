@@ -129,14 +129,18 @@ def comprimir_capturas_viejas():
             nombre_zip = f"{nombre_capa}_{mes}.zip"
             ruta_zip = os.path.join(DIR_ARCHIVO_COMPRIMIDO, nombre_zip)
             fechas = []
+            comprimidos = []
             with zipfile.ZipFile(ruta_zip, "a", zipfile.ZIP_DEFLATED) as zf:
                 for captura in capturas:
                     ruta_png = os.path.join(DIR_BASE, captura["ruta_archivo"].lstrip("/"))
                     if os.path.exists(ruta_png):
                         zf.write(ruta_png, arcname=os.path.basename(ruta_png))
-                        os.remove(ruta_png)
+                        comprimidos.append(ruta_png)
                     fechas.append(captura["fecha_captura"])
+            # Se borra despues de marcar: si marcar falla, la base no queda apuntando a archivos borrados.
             marcar_capturas_comprimidas(MAPA, nombre_capa, fechas, f"archivo_datos/capturas_mapas/{nombre_zip}")
+            for ruta_png in comprimidos:
+                os.remove(ruta_png)
             print(f"[CapturasMapas] Comprimidas {len(fechas)} capturas de {nombre_capa} ({mes}) en {nombre_zip}")
 
 

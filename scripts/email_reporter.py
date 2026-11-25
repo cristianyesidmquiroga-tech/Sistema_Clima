@@ -62,7 +62,7 @@ def enviar_correo(adjunto_bytes, nombre_archivo):
         filename=nombre_archivo,
     )
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as smtp:
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=30) as smtp:
         smtp.starttls()
         smtp.login(SMTP_USER, SMTP_PASS)
         smtp.send_message(msg)
