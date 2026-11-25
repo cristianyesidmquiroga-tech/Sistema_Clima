@@ -16,17 +16,18 @@ Web system that collects, stores and publishes weather data for a region of Colo
 - **Satellite archive:** one capture per day and layer (GeoColor and infrared, NASA GOES-East). After three months the captures are packed into one compressed file per month, and the database records are kept.
 - **Excel export** of historical data and a weekly report sent by email.
 - **News section** with an authenticated admin form.
-- **Protection:** rate limits by country, email alerts for blocked IPs, optional passkey validation on the station endpoint, CORS allowlist and a maintenance-mode switch.
+- **Protection:** rate limits by country, email alerts for blocked IPs, a required passkey on the station endpoint, CORS allowlist and a maintenance-mode switch.
+- **Monitoring:** every container has a healthcheck, and an email goes out if the station stops sending data for 30 minutes.
 
 ## Architecture
 
-Seven containers with explicit memory and CPU limits:
+Nine containers with explicit memory and CPU limits and rotating logs:
 
 | Service | Role |
 |---|---|
 | `app` | Flask web app and API served by gunicorn |
 | `db` | PostgreSQL |
-| `redis` | Cache for expensive endpoints |
+| `redis` | Cache for expensive endpoints and shared rate-limit counters |
 | `poller` | Pulls readings from the personal station |
 | `historial_poller` | Stores daily history of public stations |
 | `lecturas_fews_poller` | Daily readings of the hydrological stations |
@@ -44,7 +45,7 @@ docs/       documentation
 git clone https://github.com/cristianyesidmquiroga-tech/Sistema_Clima.git
 cd Sistema_Clima
 cp docker/.env.example .env     # Windows: copy docker\.env.example .env
-# set DB_PASS, WU_API_KEY, STATION_PASSKEY and SMTP_* in .env
+# set DB_USER, DB_PASS, WU_API_KEY, STATION_PASSKEY and SMTP_* in .env
 docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
@@ -78,17 +79,18 @@ Sistema web que recoge, guarda y publica datos del clima de una región de Colom
 - **Archivo satelital:** una captura diaria por capa (GeoColor e infrarrojo, NASA GOES-East). Pasados tres meses las capturas se empaquetan en un archivo comprimido por mes y los registros de la base se conservan.
 - **Exportación a Excel** de datos históricos y reporte semanal enviado por correo.
 - **Sección de noticias** con formulario de administración protegido.
-- **Protección:** límites de peticiones por país, alertas por correo de IPs bloqueadas, validación opcional de passkey en el endpoint de la estación, lista de orígenes CORS y modo mantenimiento.
+- **Protección:** límites de peticiones por país, alertas por correo de IPs bloqueadas, clave obligatoria en el endpoint de la estación, lista de orígenes CORS y modo mantenimiento.
+- **Monitoreo:** cada contenedor tiene healthcheck y llega un correo si la estación pasa 30 minutos sin enviar datos.
 
 ## Arquitectura
 
-Siete contenedores con límites explícitos de memoria y CPU:
+Nueve contenedores con límites explícitos de memoria y CPU y logs que rotan:
 
 | Servicio | Función |
 |---|---|
 | `app` | App web y API en Flask con gunicorn |
 | `db` | PostgreSQL |
-| `redis` | Caché de los endpoints costosos |
+| `redis` | Caché de los endpoints costosos y contadores compartidos del límite de peticiones |
 | `poller` | Trae las lecturas de la estación propia |
 | `historial_poller` | Guarda el historial diario de estaciones públicas |
 | `lecturas_fews_poller` | Lecturas diarias de las estaciones hidrológicas |
@@ -106,7 +108,7 @@ docs/       documentación
 git clone https://github.com/cristianyesidmquiroga-tech/Sistema_Clima.git
 cd Sistema_Clima
 cp docker/.env.example .env     # en Windows: copy docker\.env.example .env
-# definir DB_PASS, WU_API_KEY, STATION_PASSKEY y SMTP_* en .env
+# definir DB_USER, DB_PASS, WU_API_KEY, STATION_PASSKEY y SMTP_* en .env
 docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
