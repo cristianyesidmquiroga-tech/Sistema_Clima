@@ -1,7 +1,8 @@
 // dashboard/main.js — arranque; debe cargarse despues de todos los demas modulos
 
 applyStoredPrefs();
-fetchRealTime();
+// La lectura ya viene en el HTML; solo se pide a la API si no vino.
+if (!mostrarLecturaInicial()) fetchRealTime();
 fetchHistory();
 fetchForecast();
 fetchAnalisisHistorico();

@@ -2,6 +2,21 @@
 
 let lastRawData = null;
 
+function leerLecturaInicial() {
+  const el = document.getElementById('lecturaInicial');
+  if (!el) return null;
+  try { return JSON.parse(el.textContent); } catch { return null; }
+}
+
+function mostrarLecturaInicial() {
+  const datos = leerLecturaInicial();
+  if (!datos) return false;
+  lastRawData = datos;
+  renderRealTime(datos);
+  updateStatus(datos.fuente || 'real');
+  return true;
+}
+
 async function fetchRealTime() {
   try {
     const res = await fetch('/api/actual');
