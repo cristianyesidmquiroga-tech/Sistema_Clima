@@ -60,6 +60,9 @@ jobs:
       - name: Ejecutar pruebas
         run: python -m pytest tests -v
 
+      - name: Pruebas de JavaScript
+        run: node --test "tests/js/*.test.mjs"
+
   dependencias:
     name: Dependencias (pip-audit)
     runs-on: ubuntu-latest
