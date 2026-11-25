@@ -57,22 +57,20 @@ function completarMosaico() {
 // Tiles de referencia (oeste/centro/este) para probar si un horario tiene
 // datos reales en toda la vista, no solo en un punto — GOES a veces hace
 // escaneos parciales que no cubren todo el continente a la vez.
-const TILES_REGION = {
-  GoogleMapsCompatible_Level6: [
-    { level: 6, row: 30, col: 16 }, { level: 6, row: 30, col: 18 }, { level: 6, row: 30, col: 21 },
-  ],
-  GoogleMapsCompatible_Level7: [
-    { level: 7, row: 61, col: 33 }, { level: 7, row: 61, col: 37 }, { level: 7, row: 61, col: 42 },
-  ],
+// Cuadro que cubre la region en cada nivel: es el que tiene que traer datos.
+// Los de los bordes no sirven de prueba (el del oeste es casi todo oceano y pesa poco).
+const TILE_REGION = {
+  GoogleMapsCompatible_Level6: { level: 6, row: 30, col: 18 },
+  GoogleMapsCompatible_Level7: { level: 7, row: 61, col: 37 },
 };
+const MINUTOS_ATRAS_MAX = 240;
+const TANDA_HORARIOS = 6;
 
-function horasGibsCandidatas() {
-  // GIBS publica en pasos de 10 min pero con retraso variable de
-  // procesamiento; probamos varios horarios recientes y usamos el primero
-  // que si tenga imagen real para nosotros.
+function horasGibsCandidatas(ahora = Date.now()) {
+  // GIBS publica cada 10 min, pero a veces con mas de una hora de retraso.
   const candidatos = [];
-  for (let atras = 20; atras <= 80; atras += 10) {
-    const t = new Date(Date.now() - atras * 60 * 1000);
+  for (let atras = 10; atras <= MINUTOS_ATRAS_MAX; atras += 10) {
+    const t = new Date(ahora - atras * 60 * 1000);
     t.setUTCSeconds(0, 0);
     t.setUTCMinutes(Math.floor(t.getUTCMinutes() / 10) * 10);
     candidatos.push(t.toISOString().replace(/\.\d+Z$/, 'Z'));
@@ -86,25 +84,24 @@ async function tileTieneDatos(cfg, tile, tiempo) {
     const res = await fetch(url);
     if (!res.ok) return false;
     const blob = await res.blob();
-    // GIBS a veces responde 200 con una imagen "vacia" (transparente, muy
-    // chica) cuando no hay datos reales para ese tile puntual.
+    // GIBS a veces responde 200 con una imagen vacia y muy chica.
     return blob.size > 2000;
   } catch (e) {
     return false;
   }
 }
 
-async function probarHorario(cfg, tiles, tiempo) {
-  // Exige que TODOS los puntos de referencia tengan datos, no solo uno.
-  const resultados = await Promise.all(tiles.map(tile => tileTieneDatos(cfg, tile, tiempo)));
-  return resultados.every(ok => ok) ? tiempo : null;
-}
-
-async function encontrarHoraValida(cfg) {
-  const tiles = TILES_REGION[cfg.tileMatrixSet];
-  const candidatos = horasGibsCandidatas();
-  const resultados = await Promise.all(candidatos.map(t => probarHorario(cfg, tiles, t)));
-  return resultados.find(t => t !== null) || null;
+async function encontrarHoraValida(cfg, probar = tileTieneDatos, ahora = Date.now()) {
+  const tile = TILE_REGION[cfg.tileMatrixSet];
+  const candidatos = horasGibsCandidatas(ahora);
+  // Del mas reciente al mas viejo, en tandas, para no lanzar decenas de pedidos a la vez.
+  for (let i = 0; i < candidatos.length; i += TANDA_HORARIOS) {
+    const tanda = candidatos.slice(i, i + TANDA_HORARIOS);
+    const hayDatos = await Promise.all(tanda.map(t => probar(cfg, tile, t)));
+    const primero = hayDatos.indexOf(true);
+    if (primero >= 0) return tanda[primero];
+  }
+  return null;
 }
 
 function actualizarVisibilidadSatelite() {
