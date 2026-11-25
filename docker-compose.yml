@@ -93,6 +93,12 @@ services:
       STATION_PASSKEY: ${STATION_PASSKEY:-}
     depends_on:
       - app
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 
@@ -112,6 +118,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 
@@ -130,6 +142,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 
@@ -148,6 +166,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 
@@ -169,6 +193,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 
@@ -189,6 +219,12 @@ services:
       EXPORT_URL: http://app:8080/api/exportar?dias=7
     depends_on:
       - app
+    healthcheck:
+      test: ["CMD", "python", "-m", "scripts.latido", "1800"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     mem_limit: 128m
     cpus: 0.25
 

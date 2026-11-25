@@ -4,12 +4,16 @@ semana (u otro periodo). Corre en su propio contenedor, revisando
 cada hora si ya toca enviar segun REPORT_FREQUENCY.
 """
 import os
-import time
+import sys
 import smtplib
 from datetime import datetime, date, timezone
 from email.message import EmailMessage
 
 import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir  # noqa: E402
 
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
@@ -83,7 +87,7 @@ def run():
                 print(f"[REPORTER] Correo enviado a {EMAIL_TO} ({nombre})")
         except Exception as e:
             print(f"[REPORTER] Error: {e}")
-        time.sleep(3600)
+        dormir(3600)
 
 
 if __name__ == "__main__":

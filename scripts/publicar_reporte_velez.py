@@ -14,11 +14,12 @@ que de verdad le sirve a alguien revisando el reporte.
 """
 import os
 import sys
-import time
 from collections import defaultdict
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir
 
 from app import create_app
 from app.models.models import obtener_lecturas_rango
@@ -117,7 +118,7 @@ def run():
                 publicar()
             except Exception as e:
                 print(f"[ReporteVelez] Error publicando reporte: {e}")
-        time.sleep(PUBLICAR_INTERVALO)
+        dormir(PUBLICAR_INTERVALO)
 
 
 if __name__ == "__main__":
