@@ -117,6 +117,21 @@ function actualizarVisibilidadSatelite() {
 
 let satRetryTimer = null;
 let satSinDatosSeguidos = 0;
+// Cada carga lleva su numero; si el usuario cambia de capa mientras la anterior
+// sigue buscando horario, la vieja no debe pisar a la nueva al terminar.
+let satPedido = 0;
+
+function quitarSatelite() {
+  if (satLayer) rainMap.removeLayer(satLayer);
+  if (satMosaico) rainMap.removeLayer(satMosaico);
+  satLayer = null;
+  satMosaico = null;
+}
+
+function ponerHoraSatelite(texto) {
+  const horaEl = document.getElementById('gwSatHora');
+  if (horaEl) horaEl.textContent = texto;
+}
 const SAT_REINTENTO_MS = 90 * 1000;
 const SAT_REINTENTOS_MAX = 3;
 
@@ -136,11 +151,16 @@ async function loadSatelliteLayer() {
   const select = document.getElementById('gwSatSelect');
   const clave = select ? select.value : 'geocolor';
   const cfg = CAPAS_SATELITE[clave] || CAPAS_SATELITE.geocolor;
-  satMaxZoom = cfg.maxZoom;
+  const pedido = ++satPedido;
+  ponerHoraSatelite('Buscando imagen...');
 
   const tiempo = await encontrarHoraValida(cfg);
+  if (pedido !== satPedido) return;
   if (!tiempo) {
     console.warn('Sin horario valido de satelite NASA para esta zona ahora mismo');
+    // Sin esto quedaba la capa anterior a la vista con la hora vieja.
+    quitarSatelite();
+    ponerHoraSatelite('Sin imagen disponible ahora, se reintenta en unos minutos');
     // GIBS a veces todavia esta procesando el horario mas reciente cuando
     // lo probamos; reintenta pronto en vez de esperar los 10 min normales.
     if (satSinDatosSeguidos < SAT_REINTENTOS_MAX) {
@@ -150,12 +170,9 @@ async function loadSatelliteLayer() {
     return;
   }
   satSinDatosSeguidos = 0;
-
-  const horaEl = document.getElementById('gwSatHora');
-  if (horaEl) {
-    horaEl.textContent = 'Imagen: ' + new Date(tiempo).toLocaleTimeString(
-      'es-CO', { hour: '2-digit', minute: '2-digit' });
-  }
+  satMaxZoom = cfg.maxZoom;
+  ponerHoraSatelite('Imagen: ' + new Date(tiempo).toLocaleTimeString(
+    'es-CO', { hour: '2-digit', minute: '2-digit' }));
 
   const base = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}`;
   const tileUrl = `${base}/\${level}/\${row}/\${col}.png`;
@@ -164,9 +181,8 @@ async function loadSatelliteLayer() {
   function ponerCapa() {
     require(["esri/layers/WebTiledLayer", "esri/layers/MapImageLayer", "esri/layers/MapImage"],
       function (WebTiledLayer, MapImageLayer, MapImage) {
-        if (!rainMap) return;
-        if (satLayer) rainMap.removeLayer(satLayer);
-        if (satMosaico) rainMap.removeLayer(satMosaico);
+        if (!rainMap || pedido !== satPedido) return;
+        quitarSatelite();
         satLayer = new WebTiledLayer(tileUrl, { id: "satelite", opacity: 0.7 });
         satMosaico = new MapImageLayer({ id: "satelite-mosaico", opacity: 0.7 });
         satMapImage = MapImage;
