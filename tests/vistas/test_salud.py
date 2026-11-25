@@ -23,7 +23,7 @@ def test_salud_sigue_en_modo_mantenimiento(client, monkeypatch):
 
 
 def test_el_contenedor_web_tiene_healthcheck():
-    texto = (RAIZ / 'docker-compose.yml').read_text(encoding='utf-8')
+    texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
     bloque = texto.split('\n  app:', 1)[1].split('\n  poller:', 1)[0]
     assert 'healthcheck:' in bloque
     assert '127.0.0.1:8080/salud' in bloque

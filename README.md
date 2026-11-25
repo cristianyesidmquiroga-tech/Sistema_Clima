@@ -43,12 +43,12 @@ docs/       documentation
 ```bash
 git clone https://github.com/cristianyesidmquiroga-tech/Sistema_Clima.git
 cd Sistema_Clima
-cp .env.example .env     # Windows: copy .env.example .env
+cp docker/.env.example .env     # Windows: copy docker\.env.example .env
 # set DB_PASS, WU_API_KEY, STATION_PASSKEY and SMTP_* in .env
-docker compose up -d --build
+docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
-Every variable is documented with a comment in `.env.example`. Set `MODO_MANTENIMIENTO=true` to put the site in maintenance mode without touching code.
+Every variable is documented with a comment in `docker/.env.example`. Set `MODO_MANTENIMIENTO=true` to put the site in maintenance mode without touching code.
 
 ## Stack
 
@@ -105,12 +105,12 @@ docs/       documentación
 ```bash
 git clone https://github.com/cristianyesidmquiroga-tech/Sistema_Clima.git
 cd Sistema_Clima
-cp .env.example .env     # en Windows: copy .env.example .env
+cp docker/.env.example .env     # en Windows: copy docker\.env.example .env
 # definir DB_PASS, WU_API_KEY, STATION_PASSKEY y SMTP_* en .env
-docker compose up -d --build
+docker compose -f docker/docker-compose.yml --env-file .env up -d --build
 ```
 
-Cada variable está documentada con un comentario en `.env.example`. Con `MODO_MANTENIMIENTO=true` el sitio pasa a modo mantenimiento sin tocar código.
+Cada variable está documentada con un comentario en `docker/.env.example`. Con `MODO_MANTENIMIENTO=true` el sitio pasa a modo mantenimiento sin tocar código.
 
 ## Stack
 
