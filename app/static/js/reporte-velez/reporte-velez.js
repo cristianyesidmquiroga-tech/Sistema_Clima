@@ -1,3 +1,10 @@
+const ESCAPES_HTML = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// Los textos vienen del FEWS del IDEAM y de la base: nunca se pintan como HTML.
+function esc(valor) {
+  return String(valor ?? '--').replace(/[&<>"']/g, c => ESCAPES_HTML[c]);
+}
+
 function nivelFewsClase(nivel) {
   const n = (nivel || 'normal').toLowerCase();
   if (n.includes('roja')) return 'grv-alerta-roja';
@@ -14,8 +21,8 @@ function renderEstacionPropia(datos) {
     return;
   }
   el.innerHTML = `<h2>Estación propia esta semana</h2>
-    <p>Temp. máx ${datos.temp_max ?? '--'}°C · Temp. mín ${datos.temp_min ?? '--'}°C ·
-    Lluvia acumulada ${datos.lluvia_mm ?? '--'} mm · Viento máx ${datos.viento_max ?? '--'} km/h</p>`;
+    <p>Temp. máx ${esc(datos.temp_max)}°C · Temp. mín ${esc(datos.temp_min)}°C ·
+    Lluvia acumulada ${esc(datos.lluvia_mm)} mm · Viento máx ${esc(datos.viento_max)} km/h</p>`;
 }
 
 function renderAlertas(alertas) {
@@ -26,8 +33,8 @@ function renderAlertas(alertas) {
   }
   cont.innerHTML = alertas.map(a => `
     <div class="grv-alerta-card ${nivelFewsClase(a.nivel)}">
-      <h3>${a.nombre}</h3>
-      <span class="grv-nivel">${a.nivel}</span>
+      <h3>${esc(a.nombre)}</h3>
+      <span class="grv-nivel">${esc(a.nivel)}</span>
     </div>`).join('');
 }
 
@@ -44,8 +51,8 @@ function renderMetricaMunicipio(clave, datos) {
   return `
     <div class="grv-metrica">
       <span class="grv-metrica-nombre">${ETIQUETAS_METRICA[clave]}</span>
-      <span class="grv-metrica-valor">Mín ${datos.min} <small>(${formatearFechaCorta(datos.min_fecha)})</small></span>
-      <span class="grv-metrica-valor">Máx ${datos.max} <small>(${formatearFechaCorta(datos.max_fecha)})</small></span>
+      <span class="grv-metrica-valor">Mín ${esc(datos.min)} <small>(${esc(formatearFechaCorta(datos.min_fecha))})</small></span>
+      <span class="grv-metrica-valor">Máx ${esc(datos.max)} <small>(${esc(formatearFechaCorta(datos.max_fecha))})</small></span>
     </div>`;
 }
 
@@ -57,7 +64,7 @@ function renderMunicipios(municipios) {
   }
   cont.innerHTML = municipios.map(m => `
     <div class="grv-municipio-card">
-      <h3>${m.municipio}</h3>
+      <h3>${esc(m.municipio)}</h3>
       <div class="grv-metricas">
         ${['nivel', 'caudal', 'lluvia', 'temp'].map(clave => renderMetricaMunicipio(clave, m[clave])).join('')}
       </div>
@@ -70,7 +77,7 @@ function renderAnalisis(texto) {
     cont.innerHTML = '<p class="grv-vacio">Aún no hay suficiente historial para comparar semanas.</p>';
     return;
   }
-  cont.innerHTML = texto.map(t => `<p>${t}</p>`).join('');
+  cont.innerHTML = texto.map(t => `<p>${esc(t)}</p>`).join('');
 }
 
 async function fetchReporteVelez() {
