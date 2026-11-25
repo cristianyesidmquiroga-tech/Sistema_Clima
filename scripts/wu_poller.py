@@ -20,12 +20,18 @@ from app.security import _enviar_correo  # noqa: E402
 
 WU_STATION_ID = os.environ.get("WU_STATION_ID", "")
 WU_API_KEY = os.environ.get("WU_API_KEY", "")
-POLL_INTERVAL = int(os.environ.get("WU_POLL_INTERVAL", "60"))
+# La llave gratuita de WU da 1500 consultas al dia; el mapa de lluvias usa la misma.
+POLL_INTERVAL = int(os.environ.get("WU_POLL_INTERVAL", "120"))
+ESPERA_LIMITADA = int(os.environ.get("WU_ESPERA_LIMITADA", "900"))
 TARGET_URL = os.environ.get("WU_TARGET_URL", "http://app:8080/data/report/")
 STATION_PASSKEY = os.environ.get("STATION_PASSKEY", "")
 
 WU_URL = "https://api.weather.com/v2/pws/observations/current"
 ALERTA_SIN_DATOS = int(os.environ.get("ALERTA_SIN_DATOS_SEG", "1800"))
+
+
+class LlaveLimitada(Exception):
+    pass
 
 
 def fetch_wu():
@@ -36,6 +42,8 @@ def fetch_wu():
         "apiKey": WU_API_KEY,
     }
     r = requests.get(WU_URL, params=params, timeout=15)
+    if r.status_code in (401, 429) and "throttl" in r.text.lower():
+        raise LlaveLimitada(r.text[:200])
     if r.status_code != 200:
         print(f"[WU] HTTP {r.status_code}: {r.text[:200]}")
         return None
@@ -92,6 +100,7 @@ def run():
     estado = {"ultimo_ok": time.time(), "avisado": False}
     while True:
         guardo = False
+        espera = POLL_INTERVAL
         try:
             obs = fetch_wu()
             if obs:
@@ -101,13 +110,17 @@ def run():
                     print(f"[WU] La app respondio {resp.status_code}")
             else:
                 print("[WU] Sin observaciones disponibles todavia.")
+        except LlaveLimitada as e:
+            # Seguir consultando con la llave limitada solo alarga el bloqueo.
+            print(f"[WU] Llave limitada por WU, espero {ESPERA_LIMITADA}s: {e}")
+            espera = ESPERA_LIMITADA
         except Exception as e:
             print(f"[WU] Error: {e}")
         # El latido solo cuenta lecturas guardadas: un poller vivo sin datos queda unhealthy.
         if guardo:
             latir()
         revisar_frescura(estado, guardo, time.time())
-        dormir(POLL_INTERVAL, latiendo=False)
+        dormir(espera, latiendo=False)
 
 
 if __name__ == "__main__":
