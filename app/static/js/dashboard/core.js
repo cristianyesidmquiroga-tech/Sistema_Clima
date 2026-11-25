@@ -44,16 +44,13 @@ const els = {
   uv:          document.getElementById('gwUV'),
   presion:     document.getElementById('gwPresion'),
   sensacion:   document.getElementById('gwSensacion'),
-  tempInt:     document.getElementById('gwTempInt'),
   rocio:       document.getElementById('gwRocio'),
   luna:        document.getElementById('gwLuna'),
   solar:       document.getElementById('gwSolar'),
   dirViento:   document.getElementById('gwDirViento'),
   rafaga:      document.getElementById('gwRafaga'),
-  humInt:      document.getElementById('gwHumInt'),
   statusDot:   document.getElementById('gwStatusDot'),
   statusText:  document.getElementById('gwStatusText'),
-  lastUpdate:  document.getElementById('gwLastUpdate'),
   forecastRow: document.getElementById('gwForecastRow')
 };
 
@@ -100,7 +97,6 @@ function updateClock() {
   const clockFmtEl  = document.getElementById('gwClockFmt');
   if (clockTimeEl) clockTimeEl.textContent = formatTime(now);
   if (clockFmtEl)  clockFmtEl.textContent  = timeFmt + 'h';
-  if (els.lastUpdate) els.lastUpdate.textContent = formatTime(now);
 }
 setInterval(updateClock, 1000);
 
@@ -127,8 +123,8 @@ function getCondition(data, fecha) {
   const hasRain  = parseFloat(data.lluvia_hora) > 0;
   const isCloudy = parseFloat(data.radiacion_solar) < 200 && !isNight;
 
-  if (isNight)  return { text:'Despejado (noche)', icon:'/static/img/mapa-estaciones/icon-night.svg', fx:'night' };
   if (hasRain)  return { text:'Lluvia',            icon:'/static/img/mapa-estaciones/icon-rain.svg',  fx:'rainy' };
+  if (isNight)  return { text:'Noche',             icon:'/static/img/mapa-estaciones/icon-night.svg', fx:'night' };
   if (isCloudy) return { text:'Nublado',           icon:'/static/img/mapa-estaciones/icon-cloudy.svg',fx:'cloudy'};
   return           { text:'Soleado',            icon:'/static/img/mapa-estaciones/icon-sun.svg',   fx:'sunny' };
 }

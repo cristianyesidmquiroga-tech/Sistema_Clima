@@ -208,6 +208,12 @@ function updateAlerts(data) {
   return alertas;
 }
 
+// Sin dato se muestra -- y no un 0 que parece una medicion real.
+function tempOGuion(celsius) {
+  if (celsius === null || celsius === undefined || celsius === '') return '--';
+  return `${convertTemp(celsius)} ${tempLabel()}`;
+}
+
 function renderRealTime(data) {
   const alertas = updateAlerts(data);
   const cond = getCondition(data);
@@ -219,21 +225,19 @@ function renderRealTime(data) {
   els.desc.textContent      = cond.text;
   els.icon.src              = cond.icon;
   updateFavicon(cond.icon);
-  els.lluviaHoy.textContent = data.lluvia_dia ?? 0;
+  els.lluviaHoy.textContent = data.lluvia_dia ?? '--';
   els.humedad.textContent   = data.humedad_exterior ?? '--';
   els.viento.textContent    = data.velocidad_viento ?? '--';
 
   if(els.uv) els.uv.textContent = data.uv_index ?? '--';
   if(els.presion) els.presion.textContent = `${data.presion_relativa ?? '--'} hPa`;
-  if(els.sensacion) els.sensacion.textContent = `${convertTemp(data.sensacion_termica ?? data.temp_exterior)} ${tempLabel()}`;
-  if(els.tempInt) els.tempInt.textContent = `${convertTemp(data.temp_interior ?? 0)} ${tempLabel()}`;
-  if(els.rocio) els.rocio.textContent = `${convertTemp(data.punto_rocio ?? 0)} ${tempLabel()}`;
+  if(els.sensacion) els.sensacion.textContent = tempOGuion(data.sensacion_termica ?? data.temp_exterior);
+  if(els.rocio) els.rocio.textContent = tempOGuion(data.punto_rocio);
 
-  if(els.luna) els.luna.textContent = MOON_PHASES[data.fase_lunar ?? 0];
+  if(els.luna) els.luna.textContent = MOON_PHASES[data.fase_lunar] ?? '--';
   if(els.solar) els.solar.textContent = `${data.radiacion_solar ?? '--'} W/m²`;
   if(els.dirViento) els.dirViento.textContent = `${getWindDir(data.direccion_viento)} (${data.direccion_viento ?? '--'}°)`;
   if(els.rafaga) els.rafaga.textContent = `${data.rafaga_viento ?? '--'} km/h`;
-  if(els.humInt) els.humInt.textContent = `${data.humedad_interior ?? '--'} %`;
 
   if (window.WeatherFX) WeatherFX.setMode(cond.fx);
 }
