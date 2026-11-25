@@ -2,7 +2,6 @@
 
 document.querySelectorAll('.gw-tab').forEach(btn => {
   btn.addEventListener('click', e => {
-    if (!puedeClickear('tab-chart')) return;
     document.querySelectorAll('.gw-tab').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     currentTab = e.target.getAttribute('data-target');
@@ -12,7 +11,6 @@ document.querySelectorAll('.gw-tab').forEach(btn => {
 
 document.querySelectorAll('.gw-filter-btn').forEach(btn => {
   btn.addEventListener('click', e => {
-    if (!puedeClickear('filtro-historico')) return;
     document.querySelectorAll('.gw-filter-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     historyTipo = e.target.getAttribute('data-tipo');
