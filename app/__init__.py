@@ -6,6 +6,7 @@ from flask_caching import Cache
 from werkzeug.middleware.proxy_fix import ProxyFix
 from app.models.models import db
 from app.security import limite_dinamico_por_pais, alertar_limite_excedido
+from app.estaticos import url_estatico, cache_de_estaticos
 import os
 import re
 from urllib.parse import urlsplit
@@ -115,7 +116,6 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
     # Evita que la app se caiga por conexiones muertas a Postgres
     # (proxies/redes que cierran conexiones idle) y limita el tamano
     # maximo de una peticion como defensa basica ante abuso.
@@ -146,6 +146,7 @@ def create_app():
         return {
             "anio_actual": datetime.utcnow().year,
             "cloudflare_token": os.environ.get('CLOUDFLARE_ANALYTICS_TOKEN', ''),
+            "estatico": url_estatico,
         }
 
     @app.template_filter('fecha_corta')
@@ -157,6 +158,8 @@ def create_app():
         meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
         anio, mes, dia = fecha_iso.split('-')
         return f"{int(dia)} {meses[int(mes) - 1]}"
+
+    app.after_request(cache_de_estaticos)
 
     @app.after_request
     def set_security_headers(response):

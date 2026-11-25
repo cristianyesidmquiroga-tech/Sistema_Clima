@@ -1,6 +1,6 @@
 {% extends "_base.html" %}
 {% block titulo %}nuestroclima.co — Monitoreo Agroclimático de la Provincia de Vélez{% endblock %}
-{% block css_extra %}<link rel="stylesheet" href="/static/css/site/inicio.css?v=1">{% endblock %}
+{% block css_extra %}<link rel="stylesheet" href="{{ estatico('css/site/inicio.css') }}">{% endblock %}
 {% block contenido %}
 
 <section class="gwi-hero">
@@ -78,4 +78,4 @@
 </section>
 
 {% endblock %}
-{% block js_extra %}<script src="/static/js/site/inicio.js?v=1"></script>{% endblock %}
+{% block js_extra %}<script src="{{ estatico('js/site/inicio.js') }}"></script>{% endblock %}
