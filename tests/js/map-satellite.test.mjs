@@ -65,3 +65,53 @@ test('solo prueba el cuadro de la region', async () => {
 test('sin datos en cuatro horas no devuelve horario', async () => {
   assert.equal(await encontrarHoraValida(GEOCOLOR, async () => false, AHORA), null);
 });
+
+function mapaDePrueba() {
+  const capas = [];
+  const hora = { textContent: '' };
+  const select = { value: 'geocolor' };
+  class Capa { constructor(url, o = {}) { this.url = url; this.id = o.id; } setVisibility() {} }
+  const c = vm.createContext({
+    Date, Promise, Math, Set, console: { warn() {} },
+    setTimeout: () => 0, clearTimeout() {},
+    esriMods: {},
+    document: { getElementById: id => (id === 'gwSatHora' ? hora : id === 'gwSatSelect' ? select : null) },
+    require: (_m, cb) => cb(Capa, Capa, Capa),
+  });
+  c.rainMap = {
+    getZoom: () => 6, extent: null,
+    addLayer: l => capas.push(l),
+    removeLayer: l => capas.splice(capas.indexOf(l), 1),
+  };
+  vm.runInContext(codigo, c);
+  return { c, capas, hora, select };
+}
+
+const blobGrande = { ok: true, blob: async () => ({ size: 50000 }) };
+
+test('si cambio de capa mientras la anterior busca, gana la que elegi', async () => {
+  const { c, capas, select } = mapaDePrueba();
+  let soltarGeocolor;
+  const geocolorLista = new Promise(r => { soltarGeocolor = r; });
+  c.fetch = async url => { if (url.includes('GeoColor')) await geocolorLista; return blobGrande; };
+  const primera = c.loadSatelliteLayer();
+  select.value = 'infrared';
+  await c.loadSatelliteLayer();
+  soltarGeocolor();
+  await primera;
+  const sat = capas.find(l => l.id === 'satelite');
+  assert.match(sat.url, /Band13_Clean_Infrared/);
+  assert.equal(capas.length, 2);
+});
+
+test('sin imagen de la capa elegida quita la anterior y lo dice', async () => {
+  const { c, capas, hora, select } = mapaDePrueba();
+  c.fetch = async () => blobGrande;
+  await c.loadSatelliteLayer();
+  assert.equal(capas.length, 2);
+  select.value = 'infrared';
+  c.fetch = async () => ({ ok: false });
+  await c.loadSatelliteLayer();
+  assert.equal(capas.length, 0);
+  assert.match(hora.textContent, /Sin imagen/);
+});
