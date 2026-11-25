@@ -35,3 +35,10 @@ def test_cada_build_apunta_al_dockerfile_de_docker():
     assert texto.count('dockerfile: docker/Dockerfile') == texto.count('    build:')
     assert (RAIZ / 'docker' / 'Dockerfile').exists()
     assert (RAIZ / 'docker' / 'Dockerfile.dockerignore').exists()
+
+
+def test_dependencias_en_requisitos_y_raiz_sin_sueltos():
+    assert (RAIZ / 'requisitos' / 'requirements.txt').exists()
+    assert 'COPY requisitos/requirements.txt' in (RAIZ / 'docker' / 'Dockerfile').read_text(encoding='utf-8')
+    sueltos = {'requirements.txt', 'requirements-dev.txt', 'Dockerfile', 'docker-compose.yml', '.env.example'}
+    assert not [n for n in sueltos if (RAIZ / n).exists()]
