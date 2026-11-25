@@ -9,6 +9,13 @@ def test_salud_responde_con_la_base(client):
     assert r.get_json() == {'estado': 'ok', 'db': True}
 
 
+def test_salud_avisa_si_la_base_no_responde(client, monkeypatch):
+    monkeypatch.setattr('app.routes.api.base_responde', lambda: False)
+    r = client.get('/salud')
+    assert r.status_code == 200
+    assert r.get_json() == {'estado': 'ok', 'db': False}
+
+
 def test_salud_sigue_en_modo_mantenimiento(client, monkeypatch):
     monkeypatch.setenv('MODO_MANTENIMIENTO', 'true')
     assert client.get('/salud').status_code == 200

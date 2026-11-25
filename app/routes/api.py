@@ -14,12 +14,10 @@ from app.models.models import (
     obtener_analisis_historico, obtener_datos_por_fecha, obtener_lecturas_rango,
     obtener_rafaga_maxima_reciente, obtener_velocidad_viento_promedio_reciente,
     obtener_historial_estacion, obtener_resumen_semana,
-    obtener_noticias_hoy, crear_noticia
+    obtener_noticias_hoy, crear_noticia, base_responde
 )
 from app.models.reporte_velez import obtener_ultimo_reporte_publicado
 from app.models.resumen_estacion import obtener_resumen_semanal
-from app.models.models import db
-from sqlalchemy import text
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
@@ -30,13 +28,7 @@ bp = Blueprint('api', __name__)
 @bp.route('/salud')
 @limiter.exempt
 def salud():
-    try:
-        db.session.execute(text('SELECT 1'))
-        base_ok = True
-    except Exception:
-        db.session.rollback()
-        base_ok = False
-    return jsonify({'estado': 'ok', 'db': base_ok})
+    return jsonify({'estado': 'ok', 'db': base_responde()})
 
 # ─── CONFIGURACION / CONSTANTES ───────────────────────────────
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
