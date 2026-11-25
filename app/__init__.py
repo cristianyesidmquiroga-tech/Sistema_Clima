@@ -55,7 +55,10 @@ def create_app():
 
     @app.errorhandler(429)
     def limite_excedido(e):
-        return jsonify({"error": "Demasiadas peticiones, intenta mas tarde"}), 403
+        respuesta = jsonify({"error": "Demasiadas peticiones, intenta mas tarde"})
+        respuesta.status_code = 429
+        respuesta.headers['Retry-After'] = '60'
+        return respuesta
 
     @app.errorhandler(404)
     def pagina_no_encontrada(e):
