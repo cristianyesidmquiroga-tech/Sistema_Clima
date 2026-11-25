@@ -4,10 +4,16 @@ let mainChart   = null;
 let historyData = [];
 let currentTab  = 'temp';
 
+// Un 429 o un 500 no deben pintarse ni quedar guardados como si fueran datos.
+async function pedirJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url} respondio ${res.status}`);
+  return res.json();
+}
+
 async function fetchHistory() {
   try {
-    const res = await fetch('/api/historial?horas=24');
-    historyData = await res.json();
+    historyData = await pedirJson('/api/historial?horas=24');
     renderMainChart();
     renderForecastCards(); // actualizar pronostico con datos nuevos de estacion
   } catch { }
@@ -313,8 +319,7 @@ function renderForecastCards() {
 async function fetchForecast() {
   try {
     if (!forecastOMData || Date.now() - forecastOMTs > FORECAST_CACHE_MS) {
-      const res = await fetch(OPEN_METEO_URL);
-      forecastOMData = await res.json();
+      forecastOMData = await pedirJson(OPEN_METEO_URL);
       forecastOMTs = Date.now();
     }
     renderForecastCards();
@@ -332,8 +337,7 @@ async function fetchResumenSemana() {
   const analysisEl = document.getElementById('gwHistoryAnalysis');
   if (!analysisEl) return;
   try {
-    const res = await fetch('/api/analisis/semana');
-    const r = await res.json();
+    const r = await pedirJson('/api/analisis/semana');
     if (r.temp_max == null) { analysisEl.style.display = 'none'; return; }
 
     const tMax = convertTemp(r.temp_max), tMin = convertTemp(r.temp_min), tAvg = convertTemp(r.temp_avg);
@@ -352,10 +356,14 @@ async function fetchResumenSemana() {
   }
 }
 
+let pedidoHistorico = 0;
+
 async function fetchAnalisisHistorico() {
+  // Con clics rapidos en Dias/Meses gana el ultimo boton, no la respuesta que llegue de ultima.
+  const pedido = ++pedidoHistorico;
   try {
-    const res  = await fetch(`/api/analisis?tipo=${historyTipo}`);
-    const data = await res.json();
+    const data = await pedirJson(`/api/analisis?tipo=${historyTipo}`);
+    if (pedido !== pedidoHistorico) return;
     const ctx  = document.getElementById('gwHistoryChart').getContext('2d');
     if (historyChart) historyChart.destroy();
     if (!data.length) return;
