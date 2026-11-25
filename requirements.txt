@@ -1,7 +1,7 @@
 flask>=3.0.0
 python-dotenv>=1.0.0
 flask-cors>=6.0.5
-flask-limiter>=3.5.0
+flask-limiter>=4.1.1
 flask-caching>=2.5.1
 redis>=8.1.0
 gunicorn>=27.0.1
