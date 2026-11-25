@@ -103,6 +103,12 @@ services:
       WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-60}
       WU_TARGET_URL: http://app:8080/data/report/
       STATION_PASSKEY: ${STATION_PASSKEY:-}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      EMAIL_TO: ${EMAIL_TO:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     depends_on:
       - app
     healthcheck:

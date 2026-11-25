@@ -11,15 +11,17 @@ def latir(ruta=RUTA):
         os.utime(ruta, None)
 
 
-def dormir(segundos, ruta=RUTA, paso=PASO, esperar=time.sleep):
+def dormir(segundos, ruta=RUTA, paso=PASO, esperar=time.sleep, latiendo=True):
     # Late mientras espera, para que una espera de dias no parezca un proceso colgado.
     restante = segundos
     while restante > 0:
-        latir(ruta)
+        if latiendo:
+            latir(ruta)
         tramo = min(paso, restante)
         esperar(tramo)
         restante -= tramo
-    latir(ruta)
+    if latiendo:
+        latir(ruta)
 
 
 def sano(max_segundos, ruta=RUTA, ahora=time.time):
