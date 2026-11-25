@@ -18,9 +18,25 @@ from app.models.models import (
 )
 from app.models.reporte_velez import obtener_ultimo_reporte_publicado
 from app.models.resumen_estacion import obtener_resumen_semanal
+from app.models.models import db
+from sqlalchemy import text
 from datetime import datetime
 
 bp = Blueprint('api', __name__)
+
+
+# Lo consulta el healthcheck del contenedor. Responde 200 aunque falle la base
+# para que Traefik no saque de servicio las paginas que no la necesitan.
+@bp.route('/salud')
+@limiter.exempt
+def salud():
+    try:
+        db.session.execute(text('SELECT 1'))
+        base_ok = True
+    except Exception:
+        db.session.rollback()
+        base_ok = False
+    return jsonify({'estado': 'ok', 'db': base_ok})
 
 # ─── CONFIGURACION / CONSTANTES ───────────────────────────────
 STATION_PASSKEY = os.environ.get('STATION_PASSKEY', '')
