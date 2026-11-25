@@ -158,7 +158,7 @@ async function fetchMapaLluvias() {
       const punto = new Point(est.lon, est.lat, wgs84);
       const rateTxt = est.lluvia_rate != null ? `${est.lluvia_rate.toFixed(1)} mm/h` : 'sin dato';
       const mmTxt = est.lluvia_mm != null ? `${est.lluvia_mm.toFixed(1)} mm` : 'sin dato';
-      const tempTxt = est.temp != null ? `Temp: ${est.temp}°C` : '';
+      const tempTxt = est.temp != null ? `Temp: ${tempOGuion(est.temp)}` : '';
       const lluviaTxt = est.nivel === 'sin_dato'
         ? 'Sin datos recientes'
         : `Lluvia ahora: ${rateTxt}<br>Acumulado hoy: ${mmTxt}`;
@@ -217,7 +217,7 @@ function actualizarPromedioRegional(data) {
   const vientoProm = promedio(data.map(d => d.viento));
   const lluviaProm = promedio(data.map(d => d.lluvia_mm));
 
-  elTemp.textContent    = tempProm   != null ? `${tempProm.toFixed(1)}°C` : '--°C';
+  elTemp.textContent    = tempOGuion(tempProm);
   elHum.textContent     = humProm    != null ? `${humProm.toFixed(0)}%`   : '--%';
   elViento.textContent  = vientoProm != null ? `${vientoProm.toFixed(1)} km/h` : '-- km/h';
   elLluvia.textContent  = lluviaProm != null ? `${lluviaProm.toFixed(1)} mm`   : '-- mm';
@@ -295,8 +295,8 @@ function renderStationCharts(data) {
   stationCharts.temp = new Chart(document.getElementById('gwStChartTemp').getContext('2d'), {
     type: 'line',
     data: { labels, datasets: [
-      { label: 'Temp °C', data: data.map(d => d.temp_avg), borderColor: '#fbbc04', backgroundColor: 'rgba(251,188,4,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
-      { label: 'Punto de Rocío °C', data: data.map(d => d.dewpt_avg), borderColor: '#66bb6a', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 2 },
+      { label: `Temp ${tempLabel()}`, data: data.map(d => tempNumero(d.temp_avg)), borderColor: '#fbbc04', backgroundColor: 'rgba(251,188,4,0.08)', fill: true, tension: 0.4, pointRadius: 0, borderWidth: 2 },
+      { label: `Punto de Rocío ${tempLabel()}`, data: data.map(d => tempNumero(d.dewpt_avg)), borderColor: '#66bb6a', backgroundColor: 'transparent', tension: 0.4, pointRadius: 0, borderWidth: 2 },
     ]},
     options: baseOpts,
   });
