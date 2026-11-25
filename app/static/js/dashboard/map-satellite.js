@@ -10,60 +10,48 @@ const CAPAS_SATELITE = {
 let satLayer = null;
 let satMaxZoom = 7;
 
-// Pasado el zoom real del satelite, la capa de tiles se esconde (no hay
-// tiles reales mas alla). Ya se probo pedirle a WebTiledLayer tiles de
-// niveles que no existen: repite la imagen completa en cada casillero
-// (cuadricula duplicada, confuso). En su lugar, hasta OVERZOOM_TOPE_ZOOM
-// se muestra una unica imagen estirada con CSS (satOverlayImg),
-// reposicionada en cada zoom/pan con rainMap.toScreen(). El infrarrojo
-// tiene menos zoom nativo que el GeoColor (maxZoom 6 vs 7), asi que se le
-// da mas "extra" para que ambas capas lleguen al mismo tope final.
+// Pasado el zoom real del satelite no hay tiles mas finos. Hasta
+// OVERZOOM_TOPE_ZOOM se arma un mosaico con los tiles del ultimo nivel real,
+// cada uno como MapImage georreferenciada: ArcGIS los mueve con el mapa y
+// cubren toda la vista, en vez de una sola imagen que se cortaba en el borde.
 const OVERZOOM_TOPE_ZOOM = 11;
-let satOverzoomTope = OVERZOOM_TOPE_ZOOM;
-const REGION_CENTER = { lon: -73.68, lat: 5.96 };
-const MERC_R = 6378137;
-const MERC_MAX = Math.PI * MERC_R;
+const MERC_MAX = Math.PI * 6378137;
 
-function tileDeLonLat(lon, lat, z) {
+function tilesQueCubren(ext, z, margen = 1) {
   const n = Math.pow(2, z);
-  const col = Math.floor((lon + 180) / 360 * n);
-  const latRad = lat * Math.PI / 180;
-  const row = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
-  return { row, col };
+  const tam = (2 * MERC_MAX) / n;
+  const limitar = v => Math.min(n - 1, Math.max(0, v));
+  const c0 = limitar(Math.floor((ext.xmin + MERC_MAX) / tam) - margen);
+  const c1 = limitar(Math.floor((ext.xmax + MERC_MAX) / tam) + margen);
+  const r0 = limitar(Math.floor((MERC_MAX - ext.ymax) / tam) - margen);
+  const r1 = limitar(Math.floor((MERC_MAX - ext.ymin) / tam) + margen);
+  const tiles = [];
+  for (let row = r0; row <= r1; row++) {
+    for (let col = c0; col <= c1; col++) {
+      const xmin = -MERC_MAX + col * tam;
+      const ymax = MERC_MAX - row * tam;
+      tiles.push({ row, col, extent: { xmin, ymin: ymax - tam, xmax: xmin + tam, ymax } });
+    }
+  }
+  return tiles;
 }
 
-function limitesTileMercator(row, col, z) {
-  const tam = (2 * MERC_MAX) / Math.pow(2, z);
-  const minX = -MERC_MAX + col * tam;
-  const maxY = MERC_MAX - row * tam;
-  return { minX, minY: maxY - tam, maxX: minX + tam, maxY };
-}
+let satMosaico = null;
+let satMapImage = null;
+let satUrlTile = null;
+let satTilesPuestos = new Set();
 
-let satOverlayImg = null;
-let satOverlayBoundsMerc = null;
-
-function obtenerOverlayImg() {
-  if (satOverlayImg || !document.getElementById('gwRainMap')) return satOverlayImg;
-  satOverlayImg = document.createElement('img');
-  satOverlayImg.id = 'gwSatOverlay';
-  Object.assign(satOverlayImg.style, {
-    position: 'absolute', pointerEvents: 'none', opacity: '0.7', display: 'none',
-  });
-  document.getElementById('gwRainMap').appendChild(satOverlayImg);
-  return satOverlayImg;
-}
-
-function posicionarOverlaySatelite() {
-  const img = obtenerOverlayImg();
-  if (!img || !satOverlayBoundsMerc || !rainMap || !esriMods) return;
-  const { Point, SpatialReference } = esriMods;
-  const sr = new SpatialReference({ wkid: 102100 });
-  const esqSup = rainMap.toScreen(new Point(satOverlayBoundsMerc.minX, satOverlayBoundsMerc.maxY, sr));
-  const esqInf = rainMap.toScreen(new Point(satOverlayBoundsMerc.maxX, satOverlayBoundsMerc.minY, sr));
-  img.style.left = `${esqSup.x}px`;
-  img.style.top = `${esqSup.y}px`;
-  img.style.width = `${esqInf.x - esqSup.x}px`;
-  img.style.height = `${esqInf.y - esqSup.y}px`;
+function completarMosaico() {
+  if (!satMosaico || !satMapImage || !satUrlTile || !rainMap || !rainMap.extent) return;
+  for (const t of tilesQueCubren(rainMap.extent, satMaxZoom)) {
+    const clave = `${t.row}/${t.col}`;
+    if (satTilesPuestos.has(clave)) continue;
+    satTilesPuestos.add(clave);
+    satMosaico.addImage(new satMapImage({
+      extent: Object.assign({ spatialReference: { wkid: 102100 } }, t.extent),
+      href: satUrlTile(satMaxZoom, t.row, t.col),
+    }));
+  }
 }
 
 // Tiles de referencia (oeste/centro/este) para probar si un horario tiene
@@ -123,11 +111,10 @@ function actualizarVisibilidadSatelite() {
   if (!rainMap) return;
   const zoom = rainMap.getZoom();
   if (satLayer) satLayer.setVisibility(zoom <= satMaxZoom);
-  const overlay = obtenerOverlayImg();
-  if (overlay) {
-    const mostrarOverlay = zoom > satMaxZoom && zoom <= satOverzoomTope;
-    overlay.style.display = mostrarOverlay ? 'block' : 'none';
-    if (mostrarOverlay) posicionarOverlaySatelite();
+  if (satMosaico) {
+    const mostrarMosaico = zoom > satMaxZoom && zoom <= OVERZOOM_TOPE_ZOOM;
+    satMosaico.setVisibility(mostrarMosaico);
+    if (mostrarMosaico) completarMosaico();
   }
 }
 
@@ -153,7 +140,6 @@ async function loadSatelliteLayer() {
   const clave = select ? select.value : 'geocolor';
   const cfg = CAPAS_SATELITE[clave] || CAPAS_SATELITE.geocolor;
   satMaxZoom = cfg.maxZoom;
-  satOverzoomTope = OVERZOOM_TOPE_ZOOM;
 
   const tiempo = await encontrarHoraValida(cfg);
   if (!tiempo) {
@@ -174,23 +160,25 @@ async function loadSatelliteLayer() {
       'es-CO', { hour: '2-digit', minute: '2-digit' });
   }
 
-  const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/\${level}/\${row}/\${col}.png`;
-
-  const tileCentro = tileDeLonLat(REGION_CENTER.lon, REGION_CENTER.lat, cfg.maxZoom);
-  satOverlayBoundsMerc = limitesTileMercator(tileCentro.row, tileCentro.col, cfg.maxZoom);
-  const overlay = obtenerOverlayImg();
-  if (overlay) {
-    overlay.src = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}/${cfg.maxZoom}/${tileCentro.row}/${tileCentro.col}.png`;
-  }
+  const base = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${cfg.layer}/default/${tiempo}/${cfg.tileMatrixSet}`;
+  const tileUrl = `${base}/\${level}/\${row}/\${col}.png`;
+  const urlTile = (z, row, col) => `${base}/${z}/${row}/${col}.png`;
 
   function ponerCapa() {
-    require(["esri/layers/WebTiledLayer"], function (WebTiledLayer) {
-      if (!rainMap) return;
-      if (satLayer) rainMap.removeLayer(satLayer);
-      satLayer = new WebTiledLayer(tileUrl, { id: "satelite", opacity: 0.7 });
-      rainMap.addLayer(satLayer);
-      actualizarVisibilidadSatelite();
-    });
+    require(["esri/layers/WebTiledLayer", "esri/layers/MapImageLayer", "esri/layers/MapImage"],
+      function (WebTiledLayer, MapImageLayer, MapImage) {
+        if (!rainMap) return;
+        if (satLayer) rainMap.removeLayer(satLayer);
+        if (satMosaico) rainMap.removeLayer(satMosaico);
+        satLayer = new WebTiledLayer(tileUrl, { id: "satelite", opacity: 0.7 });
+        satMosaico = new MapImageLayer({ id: "satelite-mosaico", opacity: 0.7 });
+        satMapImage = MapImage;
+        satUrlTile = urlTile;
+        satTilesPuestos = new Set();
+        rainMap.addLayer(satLayer);
+        rainMap.addLayer(satMosaico);
+        actualizarVisibilidadSatelite();
+      });
   }
 
   ponerCapa();
