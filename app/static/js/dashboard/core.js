@@ -27,11 +27,19 @@ const WMO = {
 };
 
 // ─── PREFERENCIAS (persisten en localStorage) ─────────────────
-let tempUnit  = localStorage.getItem('tempUnit')  || 'C';
-let timeFmt   = localStorage.getItem('timeFmt')   || '24';
+// En modo privado o con cookies bloqueadas localStorage lanza error; sin esto se caia todo el tablero.
+function leerPref(clave) {
+  try { return localStorage.getItem(clave); } catch { return null; }
+}
+function guardarPref(clave, valor) {
+  try { localStorage.setItem(clave, valor); } catch { /* la preferencia dura solo esta visita */ }
+}
 
-function setTempUnit(u) { tempUnit = u; localStorage.setItem('tempUnit', u); }
-function setTimeFmt(f)  { timeFmt  = f; localStorage.setItem('timeFmt', f); }
+let tempUnit  = leerPref('tempUnit')  || 'C';
+let timeFmt   = leerPref('timeFmt')   || '24';
+
+function setTempUnit(u) { tempUnit = u; guardarPref('tempUnit', u); }
+function setTimeFmt(f)  { timeFmt  = f; guardarPref('timeFmt', f); }
 
 // ─── ELEMENTOS DOM ────────────────────────────────────────────
 const els = {
