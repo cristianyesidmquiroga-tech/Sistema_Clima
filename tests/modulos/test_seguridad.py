@@ -45,3 +45,11 @@ def test_el_pais_se_cachea_por_ip(monkeypatch):
     assert sec.obtener_pais('200.1.2.3') == 'CO'
     assert sec.obtener_pais('200.1.2.3') == 'CO'
     assert llamadas['n'] == 1
+
+
+def test_clave_valida_compara_sin_romperse_con_tildes():
+    assert sec.clave_valida('abc', 'abc') is True
+    assert sec.clave_valida('abd', 'abc') is False
+    assert sec.clave_valida('ñandú', 'abc') is False
+    assert sec.clave_valida(None, 'abc') is False
+    assert sec.clave_valida('abc', '') is False

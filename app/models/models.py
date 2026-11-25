@@ -297,8 +297,9 @@ def guardar_lectura(datos_raw):
 
         temp_ext_calibrada = aplicar_compensacion_termica(temp_ext_raw, radiacion_solar, viento_vel)
 
-        offset_aplicado = (temp_ext_raw - temp_ext_calibrada) if (temp_ext_raw and temp_ext_calibrada) else 0
-        sensacion_calibrada = round(sensacion_raw - offset_aplicado, 1) if sensacion_raw else None
+        hay_temps = temp_ext_raw is not None and temp_ext_calibrada is not None
+        offset_aplicado = (temp_ext_raw - temp_ext_calibrada) if hay_temps else 0
+        sensacion_calibrada = round(sensacion_raw - offset_aplicado, 1) if sensacion_raw is not None else None
         humedad_calibrada = corregir_humedad_por_temp(datos_raw.get('humidity'), temp_ext_raw, temp_ext_calibrada)
 
         nueva_lectura = Lectura(
@@ -323,10 +324,11 @@ def guardar_lectura(datos_raw):
 
         db.session.add(nueva_lectura)
         db.session.commit()
-        print(f"[DB] Lectura guardada OK")
+        return True
     except Exception as e:
         db.session.rollback()
         print(f"[DB] Error guardando: {e}")
+        return False
 
 
 def base_responde():

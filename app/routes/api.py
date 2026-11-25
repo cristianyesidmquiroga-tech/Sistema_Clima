@@ -1,13 +1,13 @@
 import os
 import io
 import uuid
-import hmac
 import requests
 from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
 from app import limiter, cache
 from app.reenvio import reenviar_al_piloto
+from app.security import clave_valida
 from app.models.models import (
     guardar_lectura, obtener_ultima_lectura,
     obtener_historial, obtener_stats_dia, obtener_stats_agrupadas,
@@ -189,15 +189,12 @@ def recibir_datos():
     if not datos:
         return "No data", 400
 
-    if not STATION_PASSKEY or not hmac.compare_digest(str(datos.get('PASSKEY', '')), STATION_PASSKEY):
+    if not clave_valida(datos.get('PASSKEY'), STATION_PASSKEY):
         return "Forbidden", 403
 
-    print(f"\n[{datetime.now().strftime('%H:%M:%S')}] Datos recibidos de la estación:")
-    for k, v in datos.items():
-        if k != 'PASSKEY':
-            print(f"  {k}: {v}")
-
-    guardar_lectura(datos)
+    # Con 500 la estacion reintenta; con OK la lectura se perdia sin aviso.
+    if not guardar_lectura(datos):
+        return "Error guardando", 500
     cache.delete_memoized(armar_lectura_actual)
     reenviar_al_piloto(datos)
     return "OK", 200
@@ -537,7 +534,7 @@ def admin_noticias():
     exito = False
 
     if request.method == 'POST':
-        if not ADMIN_PASSKEY or not hmac.compare_digest(request.form.get('clave', ''), ADMIN_PASSKEY):
+        if not clave_valida(request.form.get('clave'), ADMIN_PASSKEY):
             error = "Clave incorrecta."
         else:
             titulo = (request.form.get('titulo') or '').strip()

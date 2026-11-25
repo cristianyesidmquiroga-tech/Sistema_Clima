@@ -28,3 +28,9 @@ def test_titulo_vacio_no_publica(client, sesion):
 def test_tipo_desconocido_queda_como_informativa(client, sesion):
     publicar(client, 'admin-de-pruebas', tipo='otro')
     assert Noticia.query.one().tipo == 'informativa'
+
+
+def test_clave_con_tildes_no_rompe_el_admin(client, sesion):
+    r = publicar(client, 'contraseña')
+    assert r.status_code == 200
+    assert 'Clave incorrecta' in r.get_data(as_text=True)
