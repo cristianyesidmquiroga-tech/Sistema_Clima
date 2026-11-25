@@ -49,3 +49,10 @@ def test_cada_servicio_rota_sus_logs():
     servicios = re.findall(r'^  ([a-z_]+):\n    (?:image|build)', texto, re.M)
     assert len(servicios) == texto.count('    logging: *logs') == 9
     assert 'max-size: "10m"' in texto
+
+
+def test_los_secretos_son_obligatorios_y_no_caen_en_vacio():
+    texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
+    for secreto in ('DB_USER', 'DB_PASS', 'STATION_PASSKEY'):
+        assert f'${{{secreto}}}' not in texto and f'${{{secreto}:-}}' not in texto, secreto
+        assert f'${{{secreto}:?}}' in texto, secreto

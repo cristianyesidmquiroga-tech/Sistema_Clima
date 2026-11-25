@@ -11,13 +11,13 @@ services:
     container_name: clima_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_USER: ${DB_USER:?}
+      POSTGRES_PASSWORD: ${DB_PASS:?}
       POSTGRES_DB: ${DB_NAME:-clima_db}
     volumes:
       - pgdata:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME:-clima_db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:?} -d ${DB_NAME:-clima_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,13 +50,13 @@ services:
       - capturas_mapas:/app/app/static/img/reporte-velez/capturas
       - archivo_capturas_comprimidas:/app/archivo_datos/capturas_mapas
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
       REDIS_URL: redis://redis:6379/0
-      STATION_PASSKEY: ${STATION_PASSKEY:-}
+      STATION_PASSKEY: ${STATION_PASSKEY:?}
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       MODO_MANTENIMIENTO: ${MODO_MANTENIMIENTO:-false}
       ADMIN_PASSKEY: ${ADMIN_PASSKEY:-}
@@ -101,7 +101,7 @@ services:
       WU_API_KEY: ${WU_API_KEY:-}
       WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-60}
       WU_TARGET_URL: http://app:8080/data/report/
-      STATION_PASSKEY: ${STATION_PASSKEY:-}
+      STATION_PASSKEY: ${STATION_PASSKEY:?}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER:-}
@@ -128,8 +128,8 @@ services:
     restart: unless-stopped
     command: ["python", "scripts/historial_estaciones_poller.py"]
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
@@ -156,8 +156,8 @@ services:
     restart: unless-stopped
     command: ["python", "scripts/lecturas_fews_poller.py"]
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
@@ -183,8 +183,8 @@ services:
     restart: unless-stopped
     command: ["python", "scripts/publicar_reporte_velez.py"]
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
@@ -213,8 +213,8 @@ services:
       - capturas_mapas:/app/app/static/img/reporte-velez/capturas
       - archivo_capturas_comprimidas:/app/archivo_datos/capturas_mapas
     environment:
-      DB_USER: ${DB_USER}
-      DB_PASS: ${DB_PASS}
+      DB_USER: ${DB_USER:?}
+      DB_PASS: ${DB_PASS:?}
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
