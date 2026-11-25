@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block titulo %}nuestroclima.co{% endblock %}</title>
-<link rel="stylesheet" href="/static/css/site/tokens.css?v=1">
-<link rel="stylesheet" href="/static/css/site/layout.css?v=1">
+<link rel="stylesheet" href="{{ estatico('css/site/tokens.css') }}">
+<link rel="stylesheet" href="{{ estatico('css/site/layout.css') }}">
 {% block css_extra %}{% endblock %}
 </head>
 <body>
@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <script src="/static/js/site/site.js?v=1"></script>
+  <script src="{{ estatico('js/site/site.js') }}"></script>
   {% block js_extra %}{% endblock %}
   {% if cloudflare_token %}<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cloudflare_token }}"}'></script>{% endif %}
 </body>
