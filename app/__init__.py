@@ -94,7 +94,7 @@ def create_app():
     @app.before_request
     def _revisar_mantenimiento():
         if os.environ.get('MODO_MANTENIMIENTO', 'false').lower() == 'true' \
-                and not request.path.startswith('/static/'):
+                and not request.path.startswith('/static/') and request.path != '/salud':
             return render_template('mantenimiento/mantenimiento.html'), 503
         return None
 
