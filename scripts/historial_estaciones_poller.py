@@ -42,9 +42,14 @@ def run():
             with app.app_context():
                 hoy = datetime.utcnow().date()
                 for station_id in ESTACIONES_DEFAULT:
-                    fechas = fechas_a_completar(
-                        hoy, VENTANA_DIAS, lambda f: dia_ya_guardado(station_id, f)
-                    )
+                    # Un error de base aqui mataba el proceso entero; ahora solo salta esta estacion.
+                    try:
+                        fechas = fechas_a_completar(
+                            hoy, VENTANA_DIAS, lambda f: dia_ya_guardado(station_id, f)
+                        )
+                    except Exception as e:
+                        print(f"[HistorialPoller] Error revisando {station_id}: {e}")
+                        continue
                     for fecha in fechas:
                         try:
                             filas = traer_dia(station_id, fecha)
