@@ -8,8 +8,12 @@ Necesario porque la estacion (Sainlogic) solo soporta subir datos a
 Wunderground/Weathercloud, no a un servidor propio.
 """
 import os
-import time
+import sys
 import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir  # noqa: E402
 
 WU_STATION_ID = os.environ.get("WU_STATION_ID", "")
 WU_API_KEY = os.environ.get("WU_API_KEY", "")
@@ -76,7 +80,7 @@ def run():
                 print("[WU] Sin observaciones disponibles todavia.")
         except Exception as e:
             print(f"[WU] Error: {e}")
-        time.sleep(POLL_INTERVAL)
+        dormir(POLL_INTERVAL)
 
 
 if __name__ == "__main__":

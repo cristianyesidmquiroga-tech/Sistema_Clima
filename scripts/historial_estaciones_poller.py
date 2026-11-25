@@ -8,10 +8,11 @@ asi una tabla vacia (despliegue nuevo) o un hueco por caida se llenan solos.
 """
 import os
 import sys
-import time
 from datetime import datetime, timedelta
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir
 
 from app import create_app
 from scripts.backfill_historial_wu import traer_dia, dia_ya_guardado, ESTACIONES_DEFAULT
@@ -51,7 +52,7 @@ def run():
                                 print(f"[HistorialPoller] {station_id} {fecha}: {filas} horas")
                         except Exception as e:
                             print(f"[HistorialPoller] Error {station_id} {fecha}: {e}")
-        time.sleep(POLL_INTERVAL)
+        dormir(POLL_INTERVAL)
 
 
 if __name__ == "__main__":

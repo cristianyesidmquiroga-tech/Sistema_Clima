@@ -19,13 +19,14 @@ docs/archivo_capturas_mapas.md para el detalle completo):
 """
 import os
 import sys
-import time
 import zipfile
 import requests
 from datetime import datetime, timedelta
 from collections import defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir
 
 from app import create_app
 from app.models.reporte_velez import (
@@ -153,7 +154,7 @@ def run():
                     ultimo_dia_compresion = hoy
             except Exception as e:
                 print(f"[CapturasMapas] Error en el ciclo: {e}")
-        time.sleep(CAPTURA_INTERVALO)
+        dormir(CAPTURA_INTERVALO)
 
 
 if __name__ == "__main__":

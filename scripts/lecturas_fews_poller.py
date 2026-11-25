@@ -8,10 +8,11 @@ por semana no alcanza para eso.
 """
 import os
 import sys
-import time
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.latido import dormir
 
 from app import create_app
 from app.models.reporte_velez import guardar_lectura_fews_diaria
@@ -44,7 +45,7 @@ def run():
                 capturar_hoy()
             except Exception as e:
                 print(f"[LecturasFews] Error en el ciclo: {e}")
-        time.sleep(POLL_INTERVAL)
+        dormir(POLL_INTERVAL)
 
 
 if __name__ == "__main__":
