@@ -1,6 +1,6 @@
 {% extends "_base.html" %}
 {% block titulo %}Reporte Provincia de Vélez | nuestroclima.co{% endblock %}
-{% block css_extra %}<link rel="stylesheet" href="/static/css/reporte-velez/reporte-velez.css?v=1">{% endblock %}
+{% block css_extra %}<link rel="stylesheet" href="{{ estatico('css/reporte-velez/reporte-velez.css') }}">{% endblock %}
 {% block contenido %}
 
 <div class="grv-marca-agua">www.nuestroclima.co</div>
@@ -51,4 +51,4 @@
 </section>
 
 {% endblock %}
-{% block js_extra %}<script src="/static/js/reporte-velez/reporte-velez.js?v=1"></script>{% endblock %}
+{% block js_extra %}<script src="{{ estatico('js/reporte-velez/reporte-velez.js') }}"></script>{% endblock %}

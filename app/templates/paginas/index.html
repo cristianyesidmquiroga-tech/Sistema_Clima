@@ -4,20 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Sistema Clima | Región Guayaba-Bocadillo</title>
-  <link rel="icon" type="image/svg+xml" href="/static/img/mapa-estaciones/icon-sun.svg">
-  <link rel="apple-touch-icon" href="/static/img/marca/icon-apple-touch.png">
-  <link rel="manifest" href="/static/img/marca/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="{{ estatico('img/mapa-estaciones/icon-sun.svg') }}">
+  <link rel="apple-touch-icon" href="{{ estatico('img/marca/icon-apple-touch.png') }}">
+  <link rel="manifest" href="{{ estatico('img/marca/manifest.json') }}">
   <meta name="theme-color" content="#1c1e22">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Clima Guayaba-Bocadillo">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/css/dashboard/base.css?v=2">
-  <link rel="stylesheet" href="/static/css/dashboard/header-current.css?v=1">
-  <link rel="stylesheet" href="/static/css/dashboard/tabs-charts.css?v=1">
-  <link rel="stylesheet" href="/static/css/dashboard/rain-map.css?v=1">
-  <link rel="stylesheet" href="/static/css/dashboard/station-modal.css?v=2">
+  <link rel="stylesheet" href="{{ estatico('css/dashboard/base.css') }}">
+  <link rel="stylesheet" href="{{ estatico('css/dashboard/header-current.css') }}">
+  <link rel="stylesheet" href="{{ estatico('css/dashboard/tabs-charts.css') }}">
+  <link rel="stylesheet" href="{{ estatico('css/dashboard/rain-map.css') }}">
+  <link rel="stylesheet" href="{{ estatico('css/dashboard/station-modal.css') }}">
 </head>
 <body>
 
@@ -29,7 +29,7 @@
 
     <!-- ESCENA DE FINCA EN LA PARTE BAJA DE LA TARJETA -->
     <div class="scene-backdrop">
-      <img src="/static/img/mapa-estaciones/bg_sunny.png" alt="Finca" class="scene-backdrop-img" id="sceneImg">
+      <img src="{{ estatico('img/mapa-estaciones/bg_sunny.png') }}" alt="Finca" class="scene-backdrop-img" id="sceneImg">
       <div class="scene-backdrop-fade"></div>
     </div>
 
@@ -52,7 +52,7 @@
 
     <section class="gw-main-weather">
       <div class="gw-main-left">
-        <img src="/static/img/mapa-estaciones/icon-sun.svg" id="gwMainIcon" alt="Clima" class="gw-huge-icon">
+        <img src="{{ estatico('img/mapa-estaciones/icon-sun.svg') }}" id="gwMainIcon" alt="Clima" class="gw-huge-icon">
         <div class="gw-temp-box">
           <span class="gw-temp-value" id="gwTemp">--</span>
           <!-- Unidades clickeables directamente -->
@@ -325,18 +325,18 @@
 
   </div>
 
-  <script src="/static/lib/chart.min.js?v=29"></script>
-  <script src="/static/lib/chartjs-plugin-datalabels.min.js?v=29"></script>
-  <script src="/static/js/dashboard/weather-fx.js?v=29"></script>
-  <script src="/static/js/dashboard/core.js?v=1"></script>
-  <script src="/static/js/dashboard/realtime.js?v=1"></script>
-  <script src="/static/js/dashboard/history.js?v=1"></script>
-  <script src="/static/js/dashboard/ui-listeners.js?v=1"></script>
-  <script src="/static/js/dashboard/station-week.js?v=1"></script>
-  <script src="/static/js/dashboard/map-rain.js?v=4"></script>
-  <script src="/static/js/dashboard/map-satellite.js?v=3"></script>
-  <script src="/static/js/dashboard/map-defer.js?v=1"></script>
-  <script src="/static/js/dashboard/main.js?v=2"></script>
+  <script src="{{ estatico('lib/chart.min.js') }}"></script>
+  <script src="{{ estatico('lib/chartjs-plugin-datalabels.min.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/weather-fx.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/core.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/realtime.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/history.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/ui-listeners.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/station-week.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/map-rain.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/map-satellite.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/map-defer.js') }}"></script>
+  <script src="{{ estatico('js/dashboard/main.js') }}"></script>
   {% if cloudflare_token %}<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ cloudflare_token }}"}'></script>{% endif %}
 </body>
 </html>
