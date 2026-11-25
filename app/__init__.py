@@ -7,6 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from app.models.models import db
 from app.security import limite_dinamico_por_pais, alertar_limite_excedido
 from app.estaticos import url_estatico, cache_de_estaticos
+from app.cloudflare import IPDesdeCloudflare
 import os
 import re
 from urllib.parse import urlsplit
@@ -38,6 +39,7 @@ def create_app():
     # Detras de Traefik (1 solo proxy): confiar en X-Forwarded-For/Proto
     # para que request.remote_addr sea la IP real del visitante, no la
     # IP interna del proxy.
+    app.wsgi_app = IPDesdeCloudflare(app.wsgi_app)
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
 
     # Redis: le da al rate-limiter un contador compartido entre los 2
