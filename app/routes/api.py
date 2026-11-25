@@ -59,7 +59,8 @@ ESTACIONES_MAPA_LLUVIAS = [
     {"id": "IVLEZ7",   "nombre": "Vélez 2",           "lat": 6.010081, "lon": -73.663589},
     {"id": "IPUENT49", "nombre": "Puente Nacional",   "lat": 5.878300, "lon": -73.677800},
 ]
-CACHE_MAPA_LLUVIAS_TTL = 90  # segundos, cacheado en Redis via @cache.cached
+# 6 estaciones cada 15 min caben, junto al poller, en la cuota diaria de WU.
+CACHE_MAPA_LLUVIAS_TTL = 900
 
 COLUMNAS_EXPORTAR = [
     ("timestamp", "Fecha/Hora (UTC)"),

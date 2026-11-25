@@ -99,7 +99,7 @@ services:
     environment:
       WU_STATION_ID: ${WU_STATION_ID:-}
       WU_API_KEY: ${WU_API_KEY:-}
-      WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-60}
+      WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-120}
       WU_TARGET_URL: http://app:8080/data/report/
       STATION_PASSKEY: ${STATION_PASSKEY:?}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
