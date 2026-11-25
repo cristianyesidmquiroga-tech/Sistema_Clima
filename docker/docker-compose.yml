@@ -245,11 +245,8 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
-      SNA_RPC_URL: ${SNA_RPC_URL:-}
-      SNA_RPC_USUARIO: ${SNA_RPC_USUARIO:-}
-      SNA_RPC_CLAVE: ${SNA_RPC_CLAVE:-}
-      SNA_REGISTRO: ${SNA_REGISTRO:-}
-      SNA_LLAVE_SELLADORA: ${SNA_LLAVE_SELLADORA:-}
+      SELLADOR_URL: ${SELLADOR_URL:-}
+      SELLADOR_SECRETO: ${SELLADOR_SECRETO:-}
       SELLO_SAL: ${SELLO_SAL:-}
     depends_on:
       db:
@@ -260,7 +257,7 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
-    mem_limit: 192m
+    mem_limit: 128m
     logging: *logs
     cpus: 0.25
 
