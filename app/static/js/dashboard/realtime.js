@@ -115,19 +115,12 @@ function reproducirSonidoClima(fx, esTormenta) {
   } catch { /* Web Audio no disponible, se ignora silenciosamente */ }
 }
 
+// Nunca suena al cargar: solo con el primer toque de la persona en la pagina, y una sola vez.
 let sonidoInicialPendiente = true;
 function intentarSonidoInicial(fx, esTormenta) {
   if (!sonidoInicialPendiente) return;
   sonidoInicialPendiente = false;
-  setTimeout(() => {
-    try {
-      reproducirSonidoClima(fx, esTormenta);
-    } catch {
-      // Autoplay bloqueado por el navegador: reproducir en la primera interaccion
-      const reintentar = () => { reproducirSonidoClima(fx, esTormenta); document.removeEventListener('click', reintentar); };
-      document.addEventListener('click', reintentar, { once: true });
-    }
-  }, 1000);
+  document.addEventListener('pointerdown', () => reproducirSonidoClima(fx, esTormenta), { once: true });
 }
 
 // ─── NOTIFICACIONES DEL NAVEGADOR PARA ALERTAS ────────────────
@@ -164,11 +157,8 @@ function notificarAlertasNuevas(alertas) {
     });
   };
 
-  if (Notification.permission === 'granted') {
-    mostrar();
-  } else if (Notification.permission !== 'denied') {
-    Notification.requestPermission().then(p => { if (p === 'granted') mostrar(); });
-  }
+  // No se pide permiso sin que la persona lo solicite; solo avisa si ya lo dio.
+  if (Notification.permission === 'granted') mostrar();
 }
 
 // ─── ALERTAS DE CLIMA (útiles para la finca) ──────────────────
