@@ -44,7 +44,7 @@ async function fetchRealTime() {
   }
 }
 
-const MOON_PHASES = ['🌑 Luna Nueva', '🌒 Creciente', '🌓 Cuarto Creciente', '🌔 Llena Creciente', '🌕 Luna Llena', '🌖 Llena Menguante', '🌗 Cuarto Menguante', '🌘 Menguante'];
+const MOON_PHASES = ['Luna nueva', 'Creciente', 'Cuarto creciente', 'Gibosa creciente', 'Luna llena', 'Gibosa menguante', 'Cuarto menguante', 'Menguante'];
 
 function getWindDir(deg) {
   if (deg === undefined || deg === null) return '--';
@@ -157,7 +157,7 @@ function notificarAlertasNuevas(alertas) {
       estadoAlertasNotificadas.set(a.clase, estado);
       try {
         new Notification('Sistema Clima - Región Guayaba-Bocadillo', {
-          body: `${a.icono} ${a.texto}`,
+          body: a.texto,
           icon: '/static/img/marca/icon-192.png',
         });
       } catch { /* algunos navegadores moviles no soportan Notification en pagina */ }
@@ -186,13 +186,13 @@ function updateAlerts(data) {
   const rafaga = parseFloat(data.rafaga_viento);
 
   if (!isNaN(temp) && temp <= UMBRAL_HELADA) {
-    alertas.push({ clase: 'frio', icono: '❄️', texto: `Riesgo de helada: ${temp.toFixed(1)}°C` });
+    alertas.push({ clase: 'frio', texto: `Riesgo de helada: ${temp.toFixed(1)}°C` });
   }
   if (!isNaN(lluviaHora) && lluviaHora >= UMBRAL_LLUVIA) {
-    alertas.push({ clase: 'lluvia', icono: '🌧️', texto: `Lluvia fuerte: ${lluviaHora.toFixed(1)} mm/h` });
+    alertas.push({ clase: 'lluvia', texto: `Lluvia fuerte: ${lluviaHora.toFixed(1)} mm/h` });
   }
   if (!isNaN(rafaga) && rafaga >= UMBRAL_VIENTO) {
-    alertas.push({ clase: 'viento', icono: '💨', texto: `Viento fuerte: ráfagas de ${Math.round(rafaga)} km/h` });
+    alertas.push({ clase: 'viento', texto: `Viento fuerte: ráfagas de ${Math.round(rafaga)} km/h` });
   }
 
   if (!alertas.length) {
@@ -202,7 +202,7 @@ function updateAlerts(data) {
   }
   banner.style.display = 'flex';
   banner.innerHTML = alertas.map(a =>
-    `<div class="gw-alert ${a.clase}">${a.icono} ${a.texto}</div>`
+    `<div class="gw-alert ${a.clase}">${a.texto}</div>`
   ).join('');
   notificarAlertasNuevas(alertas);
   return alertas;

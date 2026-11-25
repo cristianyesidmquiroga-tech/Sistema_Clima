@@ -73,9 +73,10 @@ function alinearPorHora(raw) {
 }
 
 const TEMP_UMBRAL_C = 18;
+const ICONO_HUMEDAD = '<img src="/static/img/mapa-estaciones/icon-humedad.svg" class="gw-wind-icon-img" alt="" width="18" height="18">';
 function tempIcon(tempC) {
   const c = parseFloat(tempC);
-  if (isNaN(c)) return '🌡️';
+  if (isNaN(c)) return '';
   const src = c < TEMP_UMBRAL_C ? '/static/img/mapa-estaciones/icon-temp-cold.svg' : '/static/img/mapa-estaciones/icon-temp-hot.svg';
   return `<img src="${src}" class="gw-wind-icon-img" alt="temp">`;
 }
@@ -190,10 +191,10 @@ function renderMainChart() {
       if (isNow && humNow) return humNow;
       if (!d) return '--';
       return Math.round(parseFloat(d.humedad_exterior) || 0) + '%';
-    }, d => '💧',
+    }, d => ICONO_HUMEDAD,
       (hourly, idx) => ({
         value: Math.round(hourly.relative_humidity_2m[idx]) + '%',
-        label: '💧'
+        label: ICONO_HUMEDAD
       }));
   } else if (currentTab === 'wind') {
     canvas.style.display = 'none';
@@ -340,10 +341,10 @@ async function fetchResumenSemana() {
 
     analysisEl.innerHTML = `
       <strong>Análisis de la última semana:</strong><br>
-      🌡️ Temp: Prom ${tAvg}${u} (Máx: ${tMax}${u}, Mín: ${tMin}${u})<br>
-      💧 Humedad: Máx ${r.humedad_max ?? '--'}%, Mín ${r.humedad_min ?? '--'}%<br>
-      💨 Viento: Máx ${r.viento_max ?? '--'} km/h, Mín ${r.viento_min ?? '--'} km/h<br>
-      🌧️ Lluvia Acumulada: ${r.lluvia_semana ?? '--'} mm
+      Temperatura: promedio ${tAvg}${u} (Máx: ${tMax}${u}, Mín: ${tMin}${u})<br>
+      Humedad: Máx ${r.humedad_max ?? '--'}%, Mín ${r.humedad_min ?? '--'}%<br>
+      Viento: Máx ${r.viento_max ?? '--'} km/h, Mín ${r.viento_min ?? '--'} km/h<br>
+      Lluvia acumulada: ${r.lluvia_semana ?? '--'} mm
     `;
     analysisEl.style.display = 'block';
   } catch (e) {
