@@ -53,7 +53,7 @@ EXTENSIONES_IMAGEN_VALIDAS = {'.jpg', '.jpeg', '.png', '.webp'}
 # reportan traen su lat/lon en vivo. Barbosa 2 y Puente Nacional usan la
 # ubicacion aproximada del municipio (no exponen el punto exacto).
 ESTACIONES_MAPA_LLUVIAS = [
-    {"id": "IGUAVA3",  "nombre": "Guavatá (nuestra)", "lat": 5.935903, "lon": -73.730659},
+    {"id": "IGUAVA3",  "nombre": "Guavatá (nuestra)", "lat": 5.94,     "lon": -73.73},
     {"id": "IBARBO1",  "nombre": "Barbosa 1",         "lat": 5.945381, "lon": -73.640910},
     {"id": "IBARBO2",  "nombre": "Barbosa 2",         "lat": 5.930000, "lon": -73.620000},
     {"id": "IVLEZ2",   "nombre": "Vélez 1",           "lat": 5.977131, "lon": -73.662934},
@@ -323,6 +323,11 @@ def api_test():
 
 
 # ─── API: MAPA DE LLUVIAS Y ESTACIONES REGIONALES ──────────────
+# Dos decimales (~1 km): ubica el municipio sin senalar la casa del dueno.
+def _aproximar(coordenada):
+    return round(float(coordenada), 2)
+
+
 @bp.route('/api/mapa_lluvias')
 @limiter.limit("60 per hour")
 @cache.cached(timeout=CACHE_MAPA_LLUVIAS_TTL)
@@ -337,7 +342,7 @@ def api_mapa_lluvias():
         # manda el color y el parpadeo, asi que al parar de llover vuelve sola.
         entrada = {
             "id": est["id"], "nombre": est["nombre"],
-            "lat": est["lat"], "lon": est["lon"],
+            "lat": _aproximar(est["lat"]), "lon": _aproximar(est["lon"]),
             "lluvia_mm": None, "nivel": "sin_dato", "lluvia_rate": None,
             "temp": None, "humedad": None, "viento": None, "obs_local": None,
         }
@@ -347,8 +352,8 @@ def api_mapa_lluvias():
                 metric = obs.get("metric", {})
                 lluvia_rate = metric.get("precipRate")
                 entrada.update({
-                    "lat": obs.get("lat") or est["lat"],
-                    "lon": obs.get("lon") or est["lon"],
+                    "lat": _aproximar(obs.get("lat") or est["lat"]),
+                    "lon": _aproximar(obs.get("lon") or est["lon"]),
                     "lluvia_mm": metric.get("precipTotal"),
                     "nivel": _nivel_lluvia(lluvia_rate),
                     "lluvia_rate": lluvia_rate,
@@ -474,7 +479,7 @@ def api_exportar():
     wb.save(buffer)
     buffer.seek(0)
 
-    nombre = f"clima_finca_lagunitas_{datetime.utcnow().strftime('%Y-%m-%d')}.xlsx"
+    nombre = f"clima_guavata_{datetime.utcnow().strftime('%Y-%m-%d')}.xlsx"
     return send_file(
         buffer,
         as_attachment=True,
