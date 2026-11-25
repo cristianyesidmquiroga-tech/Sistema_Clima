@@ -48,11 +48,11 @@ def descargar_excel():
 
 def enviar_correo(adjunto_bytes, nombre_archivo):
     msg = EmailMessage()
-    msg["Subject"] = f"Reporte Sistema Clima - Finca Lagunitas ({date.today().isoformat()})"
+    msg["Subject"] = f"Reporte Nuestro Clima - Guavata ({date.today().isoformat()})"
     msg["From"] = EMAIL_FROM
     msg["To"] = EMAIL_TO
     msg.set_content(
-        "Adjunto el reporte automatico con los datos de la estacion climatica de Finca Lagunitas.\n\n"
+        "Adjunto el reporte automatico con los datos de la estacion climatica de Guavata.\n\n"
         "Este correo se genera y envia automaticamente, no es necesario responder."
     )
     msg.add_attachment(
@@ -81,7 +81,7 @@ def run():
             hoy = ahora.date()
             if debe_enviar_hoy(ahora) and ultimo_envio != hoy:
                 excel = descargar_excel()
-                nombre = f"clima_finca_lagunitas_{hoy.isoformat()}.xlsx"
+                nombre = f"clima_guavata_{hoy.isoformat()}.xlsx"
                 enviar_correo(excel, nombre)
                 ultimo_envio = hoy
                 print(f"[REPORTER] Correo enviado a {EMAIL_TO} ({nombre})")

@@ -65,3 +65,10 @@ def test_si_no_se_guarda_responde_500_y_no_reenvia(client, monkeypatch):
 def test_sensacion_de_cero_grados_se_guarda(client, sesion):
     client.post('/data/report/', data={**DATOS, 'feelslikef': '32', 'PASSKEY': 'clave-de-pruebas'})
     assert Lectura.query.one().sensacion_termica is not None
+
+
+def test_la_api_publica_no_muestra_el_interior_de_la_casa(client):
+    client.post('/data/report/', data={**DATOS, 'PASSKEY': 'clave-de-pruebas'})
+    cuerpo = client.get('/api/actual').get_json()
+    assert 'temp_interior' not in cuerpo and 'humedad_interior' not in cuerpo
+    assert 'Lagunitas' not in client.get('/').get_data(as_text=True)

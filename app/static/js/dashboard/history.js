@@ -46,7 +46,7 @@ function alinearPorHora(raw) {
     buckets[key].push(d);
   });
   const CAMPOS = ['temp_exterior','humedad_exterior','velocidad_viento','direccion_viento',
-    'sensacion_termica','punto_rocio','temp_interior'];
+    'sensacion_termica','punto_rocio'];
   const result = hours.map(h => {
     const key = `${h.getFullYear()}-${h.getMonth()}-${h.getDate()}-${h.getHours()}`;
     const bucket = buckets[key];

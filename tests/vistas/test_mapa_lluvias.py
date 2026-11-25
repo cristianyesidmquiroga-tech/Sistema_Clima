@@ -27,3 +27,10 @@ def test_todas_las_estaciones_aparecen_aunque_no_reporten(client, monkeypatch):
     viva = next(d for d in datos if d['id'] == 'IGUAVA3')
     assert viva['temp'] == 27
     assert viva['nivel'] == 'sin_lluvia'
+
+
+def test_las_coordenadas_salen_aproximadas(client, monkeypatch):
+    monkeypatch.setattr(api_mod, 'WU_API_KEY', 'clave-de-pruebas')
+    monkeypatch.setattr(api_mod, '_consultar_estacion_wu', lambda i: {'lat': 5.935903, 'lon': -73.730659, 'metric': {}})
+    for d in client.get('/api/mapa_lluvias').get_json():
+        assert round(d['lat'], 2) == d['lat'] and round(d['lon'], 2) == d['lon']
