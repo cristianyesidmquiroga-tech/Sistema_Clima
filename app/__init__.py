@@ -131,8 +131,9 @@ def create_app():
     db.init_app(app)
 
     with app.app_context():
-        from app.routes import api
+        from app.routes import api, buscadores
         app.register_blueprint(api.bp)
+        app.register_blueprint(buscadores.bp)
         try:
             db.create_all()
         except Exception as e:
