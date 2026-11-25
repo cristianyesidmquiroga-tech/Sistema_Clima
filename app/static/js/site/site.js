@@ -3,12 +3,13 @@
 function iniciarBannerCookies() {
   const banner = document.getElementById('gwsiteCookies');
   if (!banner) return;
-  const elegido = localStorage.getItem('gwsite_cookies');
+  let elegido = null;
+  try { elegido = localStorage.getItem('gwsite_cookies'); } catch { /* almacenamiento bloqueado */ }
   if (elegido) return;
 
   banner.classList.add('visible');
   const guardar = (valor) => {
-    localStorage.setItem('gwsite_cookies', valor);
+    try { localStorage.setItem('gwsite_cookies', valor); } catch { /* almacenamiento bloqueado */ }
     banner.classList.remove('visible');
   };
   document.getElementById('gwsiteCookiesAceptar')?.addEventListener('click', () => guardar('aceptado'));
