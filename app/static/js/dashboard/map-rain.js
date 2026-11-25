@@ -241,7 +241,6 @@ function destruirStationCharts() {
 }
 
 async function openStationModal(stationId, nombre) {
-  if (!puedeClickear('modal-estacion-' + stationId)) return;
   const modal = document.getElementById('gwStationModal');
   const titulo = document.getElementById('gwStationModalTitle');
   if (!modal || !titulo) return;
