@@ -1,5 +1,6 @@
 import math
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import validates
 from datetime import datetime, timedelta
@@ -326,6 +327,15 @@ def guardar_lectura(datos_raw):
     except Exception as e:
         db.session.rollback()
         print(f"[DB] Error guardando: {e}")
+
+
+def base_responde():
+    try:
+        db.session.execute(text('SELECT 1'))
+        return True
+    except Exception:
+        db.session.rollback()
+        return False
 
 
 # ─── LECTURAS PROPIAS: CONSULTAS ────────────────────────────────
