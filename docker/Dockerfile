@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Carpetas donde montan los volumenes con nombre (docker-compose.yml):
+# Carpetas donde montan los volumenes con nombre (docker/docker-compose.yml):
 # tienen que existir ya en la imagen con el dueno correcto, porque Docker
 # solo copia el contenido inicial del volumen (con sus permisos) la
 # primera vez que se monta - si no existieran aqui, el volumen quedaria
@@ -27,4 +27,4 @@ USER appuser
 
 EXPOSE 8080
 
-CMD ["gunicorn", "-c", "gunicorn.conf.py", "run:app"]
+CMD ["gunicorn", "-c", "docker/gunicorn.conf.py", "run:app"]

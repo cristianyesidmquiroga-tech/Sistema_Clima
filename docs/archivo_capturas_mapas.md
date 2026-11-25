@@ -30,7 +30,7 @@ en disco. Por eso existe una política de compresión.
   el valor de `ruta_archivo` (pasa de apuntar al `.png` suelto a apuntar
   al `.zip` mensual) y `comprimido` pasa a `true`.
 - Esto corre automáticamente el día 1 de cada mes, como parte del mismo
-  servicio (`capturas_mapas_poller` en `docker-compose.yml`).
+  servicio (`capturas_mapas_poller` en `docker/docker-compose.yml`).
 
 ## Cómo ver una captura ya comprimida
 

@@ -31,7 +31,9 @@ services:
     cpus: 0.25
 
   app:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_app
     restart: unless-stopped
     volumes:
@@ -64,8 +66,6 @@ services:
       PILOTO_PASSKEY: ${PILOTO_PASSKEY:-}
     expose:
       - "8080"
-    ports:
-      - "${APP_PORT:-8082}:8080"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/salud', timeout=4)"]
       interval: 30s
@@ -81,7 +81,9 @@ services:
     cpus: 1.0
 
   poller:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_poller
     restart: unless-stopped
     command: ["python", "scripts/wu_poller.py"]
@@ -103,7 +105,9 @@ services:
     cpus: 0.25
 
   historial_poller:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_historial_poller
     restart: unless-stopped
     command: ["python", "scripts/historial_estaciones_poller.py"]
@@ -128,7 +132,9 @@ services:
     cpus: 0.25
 
   lecturas_fews_poller:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_lecturas_fews
     restart: unless-stopped
     command: ["python", "scripts/lecturas_fews_poller.py"]
@@ -152,7 +158,9 @@ services:
     cpus: 0.25
 
   publicador_velez:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_publicador_velez
     restart: unless-stopped
     command: ["python", "scripts/publicar_reporte_velez.py"]
@@ -176,7 +184,9 @@ services:
     cpus: 0.25
 
   capturas_mapas_poller:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_capturas_mapas
     restart: unless-stopped
     command: ["python", "scripts/capturas_mapas_poller.py"]
@@ -203,7 +213,9 @@ services:
     cpus: 0.25
 
   reporter:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: clima_reporter
     restart: unless-stopped
     command: ["python", "scripts/email_reporter.py"]

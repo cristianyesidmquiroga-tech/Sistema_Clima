@@ -13,7 +13,7 @@ def _variables_de_la_app():
 
 
 def _entorno_del_servicio_app():
-    texto = (RAIZ / 'docker-compose.yml').read_text(encoding='utf-8')
+    texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
     bloque = texto.split('\n  app:', 1)[1].split('\n  poller:', 1)[0]
     entorno = bloque.split('environment:', 1)[1].split('\n    expose:', 1)[0]
     return set(re.findall(r'^\s+([A-Z_]+):', entorno, re.M))
@@ -21,4 +21,17 @@ def _entorno_del_servicio_app():
 
 def test_toda_variable_que_lee_la_app_llega_al_contenedor():
     faltan = _variables_de_la_app() - _entorno_del_servicio_app()
-    assert not faltan, f'Faltan en docker-compose.yml (servicio app): {sorted(faltan)}'
+    assert not faltan, f'Faltan en docker/docker-compose.yml (servicio app): {sorted(faltan)}'
+
+
+def test_ningun_servicio_publica_puertos_en_el_servidor():
+    # Coolify llega por la red interna; un puerto publicado salta Traefik y su HTTPS.
+    texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
+    assert '\n    ports:' not in texto
+
+
+def test_cada_build_apunta_al_dockerfile_de_docker():
+    texto = (RAIZ / 'docker' / 'docker-compose.yml').read_text(encoding='utf-8')
+    assert texto.count('dockerfile: docker/Dockerfile') == texto.count('    build:')
+    assert (RAIZ / 'docker' / 'Dockerfile').exists()
+    assert (RAIZ / 'docker' / 'Dockerfile.dockerignore').exists()
