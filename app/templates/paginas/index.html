@@ -325,6 +325,7 @@
 
   </div>
 
+  {% if lectura_inicial %}<script type="application/json" id="lecturaInicial">{{ lectura_inicial|tojson }}</script>{% endif %}
   <script src="{{ estatico('lib/chart.min.js') }}"></script>
   <script src="{{ estatico('lib/chartjs-plugin-datalabels.min.js') }}"></script>
   <script src="{{ estatico('js/dashboard/weather-fx.js') }}"></script>

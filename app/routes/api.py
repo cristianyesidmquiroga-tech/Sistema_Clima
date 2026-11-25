@@ -198,17 +198,18 @@ def recibir_datos():
             print(f"  {k}: {v}")
 
     guardar_lectura(datos)
+    cache.delete_memoized(armar_lectura_actual)
     reenviar_al_piloto(datos)
     return "OK", 200
 
 
 # ─── API: CLIMA Y ESTACION PROPIA ──────────────────────────────
-@bp.route('/api/actual')
-@limiter.limit("300 per hour")
-def api_actual():
+# Cache corto: la usan la pagina (lectura inicial) y /api/actual, y la estacion reporta cada minuto.
+@cache.memoize(timeout=30)
+def armar_lectura_actual():
     datos = obtener_ultima_lectura()
     if not datos:
-        return jsonify({"error": "Sin datos aún. Esperando la estación..."}), 404
+        return None
 
     datos["fase_lunar"] = get_moon_phase(datetime.now())
 
@@ -238,6 +239,15 @@ def api_actual():
         if velocidad_reciente is not None:
             datos["velocidad_viento"] = round(velocidad_reciente, 1)
 
+    return datos
+
+
+@bp.route('/api/actual')
+@limiter.limit("300 per hour")
+def api_actual():
+    datos = armar_lectura_actual()
+    if not datos:
+        return jsonify({"error": "Sin datos aún. Esperando la estación..."}), 404
     return jsonify(datos)
 
 @bp.route('/api/historial')
@@ -487,7 +497,12 @@ def api_noticias():
 # ─── VISTAS DEL SITIO PUBLICO ───────────────────────────────────
 @bp.route('/')
 def dashboard():
-    return render_template('paginas/index.html')
+    # La lectura va dentro del HTML para que se vea en la primera pintura, sin esperar a /api/actual.
+    try:
+        inicial = armar_lectura_actual()
+    except Exception:
+        inicial = None
+    return render_template('paginas/index.html', lectura_inicial=inicial)
 
 @bp.route('/inicio')
 def inicio():
