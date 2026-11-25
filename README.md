@@ -21,7 +21,7 @@ Web system that collects, stores and publishes weather data for a region of Colo
 
 ## Architecture
 
-Nine containers with explicit memory and CPU limits and rotating logs:
+Ten containers with explicit memory and CPU limits and rotating logs:
 
 | Service | Role |
 |---|---|
@@ -32,6 +32,7 @@ Nine containers with explicit memory and CPU limits and rotating logs:
 | `historial_poller` | Stores daily history of public stations |
 | `lecturas_fews_poller` | Daily readings of the hydrological stations |
 | `publicador_velez`, `capturas_mapas_poller`, `reporter` | Regional report, satellite captures and weekly email |
+| `sellador` | Seals an hourly fingerprint of the readings on the SNA blockchain |
 
 ```
 app/        Flask app: routes, models, templates, static assets
@@ -84,7 +85,7 @@ Sistema web que recoge, guarda y publica datos del clima de una región de Colom
 
 ## Arquitectura
 
-Nueve contenedores con límites explícitos de memoria y CPU y logs que rotan:
+Diez contenedores con límites explícitos de memoria y CPU y logs que rotan:
 
 | Servicio | Función |
 |---|---|
@@ -95,6 +96,7 @@ Nueve contenedores con límites explícitos de memoria y CPU y logs que rotan:
 | `historial_poller` | Guarda el historial diario de estaciones públicas |
 | `lecturas_fews_poller` | Lecturas diarias de las estaciones hidrológicas |
 | `publicador_velez`, `capturas_mapas_poller`, `reporter` | Reporte regional, capturas satelitales y correo semanal |
+| `sellador` | Sella cada hora en la red blockchain SNA una huella de las lecturas |
 
 ```
 app/        app Flask: rutas, modelos, plantillas, estáticos

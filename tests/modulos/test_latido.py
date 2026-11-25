@@ -9,7 +9,7 @@ from scripts import latido
 
 RAIZ = Path(__file__).resolve().parents[2]
 PROCESOS = ["wu_poller", "historial_estaciones_poller", "lecturas_fews_poller",
-            "publicar_reporte_velez", "capturas_mapas_poller", "email_reporter"]
+            "publicar_reporte_velez", "capturas_mapas_poller", "email_reporter", "sellador_horas"]
 
 
 def test_latir_crea_el_archivo_y_queda_sano(tmp_path):
@@ -47,5 +47,5 @@ def test_todos_los_servicios_tienen_healthcheck():
     servicios = texto.split("services:\n", 1)[1].split("\nvolumes:\n", 1)[0]
     bloques = re.split(r"\n(?=  [a-z_]+:\n)", "\n" + servicios)
     nombres = {b.split(":", 1)[0].strip(): b for b in bloques if b.strip()}
-    assert len(nombres) == 9
+    assert len(nombres) == 10
     assert [n for n, b in nombres.items() if "    healthcheck:" not in b] == []
