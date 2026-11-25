@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sistema Clima | Región Guayaba-Bocadillo</title>
+  <meta name="description" content="Clima en vivo de Guavatá y la provincia de Vélez (Santander): temperatura, lluvia, viento, mapa de lluvias de la región y nubes del satélite.">
   <link rel="icon" type="image/svg+xml" href="{{ estatico('img/mapa-estaciones/icon-sun.svg') }}">
   <link rel="apple-touch-icon" href="{{ estatico('img/marca/icon-apple-touch.png') }}">
   <link rel="manifest" href="{{ estatico('img/marca/manifest.json') }}">
@@ -36,7 +37,7 @@
     <header class="gw-header">
       <div class="gw-location">
         <span class="gw-location-dot">●</span>
-        <span class="gw-location-text">Guavatá, Santander</span>
+        <h1 class="gw-location-text">Clima en Guavatá, Santander</h1>
       </div>
       <div class="gw-header-right">
         <!-- Preferencias de temperatura -->
@@ -232,7 +233,7 @@
         </div>
       </div>
       <label class="gw-radar-toggle">
-        Nubes (satélite NASA GOES) — solo visible si alejás el zoom (no tiene detalle a nivel de pueblo, y unos niveles más de zoom se ven borrosos):
+        Nubes del satélite de la NASA (se ven mejor con el mapa alejado; de cerca salen borrosas):
         <select id="gwSatSelect">
           <option value="geocolor" selected>Nubes normales (GeoColor)</option>
           <option value="infrared">Nubes infrarrojo (altura/tormenta)</option>
@@ -260,7 +261,7 @@
           <span class="gw-tri-demo"></span>
           <span><strong>Estación fija:</strong> no registra lluvia en este momento.</span>
         </div>
-        <p>Tocá un triángulo para ver su nombre, lluvia acumulada del día y temperatura, y se abre su historial de las últimas 24h y el resumen de la semana con los días de cada mínimo y máximo.</p>
+        <p>Toque un triángulo para ver su nombre, lluvia acumulada del día y temperatura, y se abre su historial de las últimas 24h y el resumen de la semana con los días de cada mínimo y máximo.</p>
         <p><strong>Nubes normales (GeoColor):</strong> foto real del satélite, colores naturales — la más fácil de leer de un vistazo, buena para ver rápido dónde hay nubosidad.</p>
         <p><strong>Nubes infrarrojo:</strong> mide la temperatura de la punta de la nube. Nubes muy frías (blancas/brillantes) suelen ser tormentas altas y fuertes; nubes tibias (grises) son nubosidad baja, sin mucha lluvia. Funciona igual de día y de noche.</p>
       </div>

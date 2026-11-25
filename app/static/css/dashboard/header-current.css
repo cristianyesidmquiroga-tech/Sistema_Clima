@@ -15,7 +15,7 @@
   gap: 6px;
 }
 .gw-location-dot { color: var(--text-blue); font-size: 10px; }
-.gw-location-text { font-weight: 500; }
+.gw-location-text { font-weight: 500; font-size: inherit; margin: 0; }
 .gw-header-right {
   display: flex;
   align-items: center;
