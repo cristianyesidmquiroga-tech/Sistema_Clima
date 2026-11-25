@@ -15,7 +15,7 @@ que de verdad le sirve a alguien revisando el reporte.
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -25,7 +25,7 @@ from app import create_app
 from app.models.models import obtener_lecturas_rango
 from app.models.reporte_velez import (
     guardar_reporte_publicado, obtener_historial_reportes_publicados,
-    obtener_lecturas_fews_semana,
+    obtener_lecturas_fews_semana, obtener_ultimo_reporte_publicado,
 )
 from scripts.fews_ideam import consultar_fews_alertas
 
@@ -109,16 +109,29 @@ def publicar():
     print(f"[ReporteVelez] Reporte publicado en {datetime.utcnow().isoformat()}Z")
 
 
+# Se cuenta desde el ultimo reporte guardado, no desde el arranque: cada despliegue publicaba uno nuevo.
+def segundos_para_publicar(ultimo, ahora, intervalo=PUBLICAR_INTERVALO):
+    if not ultimo:
+        return 0
+    publicado = datetime.fromisoformat(ultimo["fecha_publicacion"].replace("Z", "+00:00"))
+    return max(0, intervalo - (ahora - publicado).total_seconds())
+
+
 def run():
     app = create_app()
     print(f"[ReporteVelez] Iniciado. Intervalo={PUBLICAR_INTERVALO}s")
     while True:
+        espera = 0
         with app.app_context():
             try:
-                publicar()
+                espera = segundos_para_publicar(obtener_ultimo_reporte_publicado(), datetime.now(timezone.utc))
+                if espera == 0:
+                    publicar()
+                    espera = PUBLICAR_INTERVALO
             except Exception as e:
                 print(f"[ReporteVelez] Error publicando reporte: {e}")
-        dormir(PUBLICAR_INTERVALO)
+                espera = 3600
+        dormir(espera)
 
 
 if __name__ == "__main__":
