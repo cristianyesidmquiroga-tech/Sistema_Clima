@@ -128,7 +128,7 @@ def obtener_estimado_open_meteo():
             params={
                 "latitude": FINCA_LAT,
                 "longitude": FINCA_LON,
-                "current": "temperature_2m,relative_humidity_2m,precipitation,"
+                "current": "temperature_2m,relative_humidity_2m,"
                            "wind_speed_10m,wind_direction_10m,surface_pressure,uv_index",
                 "timezone": "America/Bogota",
             },
@@ -143,7 +143,6 @@ def obtener_estimado_open_meteo():
             "direccion_viento": cur.get("wind_direction_10m"),
             "presion_relativa": cur.get("surface_pressure"),
             "uv_index": cur.get("uv_index"),
-            "lluvia_hora": cur.get("precipitation"),
         }
     except Exception:
         return None
@@ -223,6 +222,8 @@ def armar_lectura_actual():
         estimado = obtener_estimado_open_meteo()
         if estimado:
             datos.update(estimado)
+            # Si llueve o no lo dice solo la estacion; el modelo marca lloviznas que no caen.
+            datos["lluvia_hora"] = None
             datos["fuente"] = "estimado"
             datos["ultimo_dato_real"] = timestamp
         else:
