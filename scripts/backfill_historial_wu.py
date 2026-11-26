@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app
+from app.cuota_wu import tomar
 from app.models.models import HistorialEstacion, guardar_historial_estacion
 
 WU_API_KEY = os.environ.get("WU_API_KEY", "")
@@ -45,6 +46,8 @@ def dia_ya_guardado(station_id, fecha):
 
 def traer_dia(station_id, fecha):
     fecha_str = fecha.strftime("%Y%m%d")
+    if not tomar("historial"):
+        return 0
     try:
         r = requests.get(
             WU_HISTORY_URL,

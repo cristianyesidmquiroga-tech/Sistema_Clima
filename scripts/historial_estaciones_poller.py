@@ -17,7 +17,7 @@ from scripts.latido import dormir
 from app import create_app
 from scripts.backfill_historial_wu import traer_dia, dia_ya_guardado, ESTACIONES_DEFAULT
 
-POLL_INTERVAL = int(os.environ.get("HISTORIAL_POLL_INTERVAL", str(30 * 60)))
+POLL_INTERVAL = int(os.environ.get("HISTORIAL_POLL_INTERVAL", "3600"))
 VENTANA_DIAS = int(os.environ.get("HISTORIAL_VENTANA_DIAS", "8"))
 
 
