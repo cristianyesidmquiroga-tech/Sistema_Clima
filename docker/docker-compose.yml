@@ -100,6 +100,7 @@ services:
       WU_STATION_ID: ${WU_STATION_ID:-}
       WU_API_KEY: ${WU_API_KEY:-}
       WU_POLL_INTERVAL: ${WU_POLL_INTERVAL:-120}
+      REDIS_URL: redis://redis:6379/0
       WU_TARGET_URL: http://app:8080/data/report/
       STATION_PASSKEY: ${STATION_PASSKEY:?}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
@@ -134,7 +135,8 @@ services:
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-clima_db}
       WU_API_KEY: ${WU_API_KEY:-}
-      HISTORIAL_POLL_INTERVAL: ${HISTORIAL_POLL_INTERVAL:-1800}
+      HISTORIAL_POLL_INTERVAL: ${HISTORIAL_POLL_INTERVAL:-3600}
+      REDIS_URL: redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy

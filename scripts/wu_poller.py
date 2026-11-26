@@ -16,11 +16,11 @@ import requests
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from scripts.latido import dormir, latir  # noqa: E402
+from app.cuota_wu import tomar  # noqa: E402
 from app.security import _enviar_correo  # noqa: E402
 
 WU_STATION_ID = os.environ.get("WU_STATION_ID", "")
 WU_API_KEY = os.environ.get("WU_API_KEY", "")
-# La llave gratuita de WU da 1500 consultas al dia; el mapa de lluvias usa la misma.
 POLL_INTERVAL = int(os.environ.get("WU_POLL_INTERVAL", "120"))
 ESPERA_LIMITADA = int(os.environ.get("WU_ESPERA_LIMITADA", "900"))
 TARGET_URL = os.environ.get("WU_TARGET_URL", "http://app:8080/data/report/")
@@ -35,6 +35,9 @@ class LlaveLimitada(Exception):
 
 
 def fetch_wu():
+    if not tomar("estacion"):
+        print("[WU] Cuota de esta hora gastada, espero la siguiente vuelta.")
+        return None
     params = {
         "stationId": WU_STATION_ID,
         "format": "json",

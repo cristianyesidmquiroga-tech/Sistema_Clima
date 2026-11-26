@@ -6,6 +6,7 @@ from werkzeug.utils import secure_filename
 from flask import Blueprint, request, jsonify, render_template, send_file
 from openpyxl import Workbook
 from app import limiter, cache
+from app.cuota_wu import tomar
 from app.reenvio import reenviar_al_piloto
 from app.security import clave_valida
 from app.models.models import (
@@ -59,8 +60,8 @@ ESTACIONES_MAPA_LLUVIAS = [
     {"id": "IVLEZ7",   "nombre": "Vélez 2",           "lat": 6.010081, "lon": -73.663589},
     {"id": "IPUENT49", "nombre": "Puente Nacional",   "lat": 5.878300, "lon": -73.677800},
 ]
-# 6 estaciones cada 15 min caben, junto al poller, en la cuota diaria de WU.
-CACHE_MAPA_LLUVIAS_TTL = 900
+# 6 estaciones cada 30 min caben en la parte del mapa de la cuota diaria de WU.
+CACHE_MAPA_LLUVIAS_TTL = 1800
 
 COLUMNAS_EXPORTAR = [
     ("timestamp", "Fecha/Hora (UTC)"),
@@ -110,6 +111,8 @@ def _nivel_lluvia(mm_hr):
 
 
 def _consultar_estacion_wu(station_id):
+    if not tomar("mapa"):
+        return None
     r = requests.get(
         "https://api.weather.com/v2/pws/observations/current",
         params={"stationId": station_id, "format": "json", "units": "m", "apiKey": WU_API_KEY},
